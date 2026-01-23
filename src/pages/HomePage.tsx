@@ -176,15 +176,26 @@ const HomePage: React.FC = () => {
               }}></div>
             </button>
 
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '8px 15px',
-              background: `${COLORS.primary}10`,
-              borderRadius: '25px',
-              border: `1px solid ${COLORS.primary}20`
-            }}>
+            <button
+              onClick={() => window.location.href = '/profile'}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '8px 15px',
+                background: `${COLORS.primary}10`,
+                borderRadius: '25px',
+                border: `1px solid ${COLORS.primary}20`,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = `${COLORS.primary}20`
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = `${COLORS.primary}10`
+              }}
+            >
               <div style={{
                 width: '35px',
                 height: '35px',
@@ -213,7 +224,7 @@ const HomePage: React.FC = () => {
                   {user.role} - {user.class}
                 </div>
               </div>
-            </div>
+            </button>
           </div>
         </div>
       </div>

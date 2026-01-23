@@ -146,6 +146,9 @@ const MultiLoginPage: React.FC = () => {
       setIsLoading(false)
       
       if (formData.email === account.email && formData.password === account.password) {
+        // Store user type for profile page
+        localStorage.setItem('userType', selectedUserType)
+        localStorage.setItem('userEmail', formData.email)
         alert(`Login berhasil sebagai ${userTypeConfig[selectedUserType].title}!`)
         // Navigate to homepage
         window.location.href = '/home'

@@ -1,103 +1,129 @@
-import React from 'react'
-import { motion } from 'framer-motion'
-import { User, Settings, LogOut, Bell, Shield } from 'lucide-react'
-import { useAuthStore } from '../stores/authStore'
-import { Button } from '../components/ui/Button'
+import { User, ArrowLeft } from 'lucide-react'
 
-const ProfilePage: React.FC = () => {
-  const { user, logout } = useAuthStore()
-
-  const handleLogout = () => {
-    logout()
-  }
-
+const ProfilePage = () => {
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      <motion.div
-        className="bg-white shadow-sm border-b border-gray-200 safe-area-top"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="px-6 py-4">
-          <h1 className="text-xl font-semibold text-gray-900">Profile</h1>
-          <p className="text-sm text-gray-600">Manage your account settings</p>
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#f8fafc',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      <div style={{
+        backgroundColor: 'rgb(15, 76, 92)',
+        color: 'white',
+        padding: '1rem'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          maxWidth: '1200px',
+          margin: '0 auto'
+        }}>
+          <button
+            onClick={() => window.history.back()}
+            style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '8px',
+              cursor: 'pointer',
+              color: 'white'
+            }}
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+            Profil Saya
+          </h1>
         </div>
-      </motion.div>
+      </div>
 
-      <div className="px-6 py-6">
-        {/* Profile Header */}
-        <motion.div
-          className="bg-white rounded-xl p-6 mb-6 border border-gray-200"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
-              <User className="text-primary-600" size={32} />
+      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem' }}>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '16px',
+          padding: '2rem',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <div style={{
+              width: '120px',
+              height: '120px',
+              borderRadius: '50%',
+              backgroundColor: 'rgb(15, 76, 92)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1rem'
+            }}>
+              <User size={48} color="white" />
             </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold text-gray-900">
-                {user?.name || 'User'}
-              </h2>
-              <p className="text-gray-600">{user?.email}</p>
-              <span className="inline-block mt-1 px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded-full font-medium">
-                {user?.role || 'Student'}
-              </span>
+            <h2 style={{ 
+              color: 'rgb(15, 76, 92)', 
+              marginBottom: '0.5rem',
+              fontSize: '1.5rem',
+              fontWeight: 'bold'
+            }}>
+              John Doe
+            </h2>
+            <p style={{ 
+              color: '#666', 
+              margin: 0,
+              fontSize: '1rem'
+            }}>
+              Siswa - XII IPA 1
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            <div style={{
+              padding: '1rem',
+              backgroundColor: '#f8fafc',
+              borderRadius: '12px'
+            }}>
+              <label style={{ 
+                fontSize: '14px', 
+                color: '#666', 
+                display: 'block', 
+                marginBottom: '0.5rem'
+              }}>
+                Email
+              </label>
+              <p style={{ 
+                color: 'rgb(15, 76, 92)', 
+                fontWeight: '500', 
+                margin: 0
+              }}>
+                murid@sekolah.com
+              </p>
+            </div>
+
+            <div style={{
+              padding: '1rem',
+              backgroundColor: '#f8fafc',
+              borderRadius: '12px'
+            }}>
+              <label style={{ 
+                fontSize: '14px', 
+                color: '#666', 
+                display: 'block', 
+                marginBottom: '0.5rem'
+              }}>
+                Telepon
+              </label>
+              <p style={{ 
+                color: 'rgb(15, 76, 92)', 
+                fontWeight: '500', 
+                margin: 0
+              }}>
+                +62 812-3456-7890
+              </p>
             </div>
           </div>
-        </motion.div>
-
-        {/* Menu Items */}
-        <motion.div
-          className="space-y-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <MenuItem icon={<Settings size={20} />} title="Settings" subtitle="App preferences" />
-          <MenuItem icon={<Bell size={20} />} title="Notifications" subtitle="Manage notifications" />
-          <MenuItem icon={<Shield size={20} />} title="Privacy" subtitle="Privacy settings" />
-        </motion.div>
-
-        {/* Logout */}
-        <motion.div
-          className="mt-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Button
-            variant="danger"
-            size="lg"
-            fullWidth
-            icon={<LogOut size={18} />}
-            onClick={handleLogout}
-          >
-            Sign Out
-          </Button>
-        </motion.div>
+        </div>
       </div>
     </div>
   )
 }
-
-const MenuItem: React.FC<{
-  icon: React.ReactNode
-  title: string
-  subtitle: string
-}> = ({ icon, title, subtitle }) => (
-  <motion.button
-    className="w-full bg-white rounded-xl p-4 border border-gray-200 flex items-center space-x-3 text-left hover:bg-gray-50 transition-colors"
-    whileHover={{ scale: 1.02 }}
-    whileTap={{ scale: 0.98 }}
-  >
-    <div className="text-gray-500">{icon}</div>
-    <div className="flex-1">
-      <h3 className="font-medium text-gray-900">{title}</h3>
-      <p className="text-sm text-gray-600">{subtitle}</p>
-    </div>
-  </motion.button>
-)
 
 export default ProfilePage
