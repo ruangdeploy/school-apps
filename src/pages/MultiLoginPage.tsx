@@ -1,4 +1,7 @@
 import React from 'react'
+import muridImage from '../assets/images/murid-removebg-preview.png'
+import guruImage from '../assets/images/guru-removebg-preview.png'
+import orangTuaImage from '../assets/images/orang_tua-removebg-preview.png'
 
 interface LoginForm {
   email: string
@@ -6,6 +9,20 @@ interface LoginForm {
 }
 
 type UserType = 'siswa' | 'guru' | 'orangtua'
+
+// Color palette constants
+const COLORS = {
+  primary: 'rgb(15, 76, 92)',
+  accent: 'rgb(244, 163, 0)',
+  white: 'rgb(255, 255, 255)'
+}
+
+// Dummy accounts for easy login
+const DUMMY_ACCOUNTS = {
+  siswa: { email: 'siswa@school.com', password: '123456' },
+  guru: { email: 'guru@school.com', password: '123456' },
+  orangtua: { email: 'ortu@school.com', password: '123456' }
+}
 
 const MultiLoginPage: React.FC = () => {
   const [selectedUserType, setSelectedUserType] = React.useState<UserType>('siswa')
@@ -27,212 +44,78 @@ const MultiLoginPage: React.FC = () => {
     siswa: {
       title: 'Siswa',
       subtitle: 'Masuk sebagai siswa',
-      color: 'rgb(15, 76, 92)',
+      color: COLORS.primary,
+      image: muridImage,
       illustration: (
         <div style={{
-          width: '100px',
-          height: '100px',
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #87CEEB 0%, #4169E1 100%)',
+          width: '220px',
+          height: '220px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-          position: 'relative',
-          overflow: 'hidden'
+          position: 'relative'
         }}>
-          {/* Student illustration */}
-          <div style={{
-            width: '80px',
-            height: '80px',
-            background: `url("data:image/svg+xml,${encodeURIComponent(`
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-                <defs>
-                  <style>
-                    .student-bg { fill: #E6F3FF; }
-                    .student-skin { fill: #F4A460; }
-                    .student-hair { fill: #8B4513; }
-                    .student-shirt { fill: #FFFFFF; }
-                    .student-bag { fill: #4169E1; }
-                    .student-book { fill: #FF6347; }
-                  </style>
-                </defs>
-                
-                <!-- Background -->
-                <rect width="200" height="200" class="student-bg"/>
-                
-                <!-- School Building -->
-                <rect x="50" y="150" width="100" height="40" fill="#FFD700" stroke="#8B4513" stroke-width="2"/>
-                <text x="100" y="175" text-anchor="middle" fill="#8B4513" font-size="12" font-weight="bold">SCHOOL</text>
-                
-                <!-- Student 1 (Boy) -->
-                <g transform="translate(70, 100)">
-                  <circle cx="0" cy="0" r="15" class="student-skin"/>
-                  <path d="M-15 -10 Q0 -20 15 -10" class="student-hair"/>
-                  <rect x="-12" y="15" width="24" height="30" rx="5" class="student-shirt"/>
-                  <rect x="-18" y="20" width="8" height="15" rx="4" class="student-bag"/>
-                  <rect x="8" y="25" width="6" height="10" rx="2" class="student-book"/>
-                </g>
-                
-                <!-- Student 2 (Girl) -->
-                <g transform="translate(130, 100)">
-                  <circle cx="0" cy="0" r="15" class="student-skin"/>
-                  <path d="M-15 -12 Q0 -22 15 -12 Q10 -5 0 -8 Q-10 -5 -15 -12" class="student-hair"/>
-                  <rect x="-12" y="15" width="24" height="30" rx="5" fill="#FFB6C1"/>
-                  <rect x="15" y="20" width="8" height="15" rx="4" fill="#9370DB"/>
-                  <rect x="-14" y="25" width="6" height="10" rx="2" class="student-book"/>
-                </g>
-              </svg>
-            `)}")`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            borderRadius: '50%'
-          }} />
+          <img 
+            src={muridImage} 
+            alt="Siswa"
+            style={{
+              width: '210px',
+              height: '210px',
+              objectFit: 'contain'
+            }}
+          />
         </div>
       )
     },
     guru: {
       title: 'Guru',
       subtitle: 'Masuk sebagai guru',
-      color: 'rgb(34, 139, 34)',
+      color: COLORS.primary,
+      image: guruImage,
       illustration: (
         <div style={{
-          width: '100px',
-          height: '100px',
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #90EE90 0%, #228B22 100%)',
+          width: '220px',
+          height: '220px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-          position: 'relative',
-          overflow: 'hidden'
+          position: 'relative'
         }}>
-          {/* Teacher illustration */}
-          <div style={{
-            width: '80px',
-            height: '80px',
-            background: `url("data:image/svg+xml,${encodeURIComponent(`
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-                <defs>
-                  <style>
-                    .teacher-bg { fill: #F0FFF0; }
-                    .teacher-skin { fill: #F4A460; }
-                    .teacher-hair { fill: #8B4513; }
-                    .teacher-shirt { fill: #90EE90; }
-                    .teacher-board { fill: #228B22; }
-                    .teacher-frame { fill: #8B4513; }
-                  </style>
-                </defs>
-                
-                <!-- Background -->
-                <rect width="200" height="200" class="teacher-bg"/>
-                
-                <!-- Blackboard -->
-                <rect x="30" y="30" width="140" height="80" class="teacher-frame"/>
-                <rect x="35" y="35" width="130" height="70" class="teacher-board"/>
-                <text x="100" y="60" text-anchor="middle" fill="white" font-size="16" font-weight="bold">HELLO</text>
-                <circle cx="60" cy="80" r="8" fill="none" stroke="white" stroke-width="2"/>
-                <polygon points="120,70 130,80 120,90" fill="none" stroke="white" stroke-width="2"/>
-                
-                <!-- Teacher -->
-                <g transform="translate(100, 140)">
-                  <circle cx="0" cy="0" r="20" class="teacher-skin"/>
-                  <path d="M-20 -15 Q0 -25 20 -15" class="teacher-hair"/>
-                  <rect x="-15" y="20" width="30" height="40" rx="8" class="teacher-shirt"/>
-                  
-                  <!-- Pointer arm -->
-                  <line x1="-15" y1="30" x2="-50" y2="0" stroke="#8B4513" stroke-width="3"/>
-                  <line x1="-50" y1="0" x2="-65" y2="-15" stroke="#654321" stroke-width="2"/>
-                  
-                  <!-- Book arm -->
-                  <line x1="15" y1="35" x2="35" y2="45" stroke="#F4A460" stroke-width="3"/>
-                  <rect x="30" y="40" width="12" height="18" rx="3" fill="#8B4513"/>
-                </g>
-              </svg>
-            `)}")`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            borderRadius: '50%'
-          }} />
+          <img 
+            src={guruImage} 
+            alt="Guru"
+            style={{
+              width: '210px',
+              height: '210px',
+              objectFit: 'contain'
+            }}
+          />
         </div>
       )
     },
     orangtua: {
       title: 'Orang Tua',
       subtitle: 'Masuk sebagai orang tua',
-      color: 'rgb(138, 43, 226)',
+      color: COLORS.primary,
+      image: orangTuaImage,
       illustration: (
         <div style={{
-          width: '100px',
-          height: '100px',
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #DDA0DD 0%, #8A2BE2 100%)',
+          width: '220px',
+          height: '220px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-          position: 'relative',
-          overflow: 'hidden'
+          position: 'relative'
         }}>
-          {/* Parents illustration */}
-          <div style={{
-            width: '80px',
-            height: '80px',
-            background: `url("data:image/svg+xml,${encodeURIComponent(`
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-                <defs>
-                  <style>
-                    .parent-bg { fill: #F8F0FF; }
-                    .parent-skin { fill: #F4A460; }
-                    .father-hair { fill: #8B4513; }
-                    .mother-hair { fill: #654321; }
-                    .father-shirt { fill: #87CEEB; }
-                    .mother-shirt { fill: #FFB6C1; }
-                    .school-bg { fill: #FFD700; }
-                  </style>
-                </defs>
-                
-                <!-- Background -->
-                <rect width="200" height="200" class="parent-bg"/>
-                
-                <!-- School Building Background -->
-                <rect x="40" y="140" width="120" height="50" class="school-bg" stroke="#8B4513" stroke-width="2"/>
-                <text x="100" y="170" text-anchor="middle" fill="#8B4513" font-size="14" font-weight="bold">SCHOOL</text>
-                
-                <!-- Father -->
-                <g transform="translate(75, 110)">
-                  <circle cx="0" cy="0" r="18" class="parent-skin"/>
-                  <path d="M-18 -10 Q0 -20 18 -10" class="father-hair"/>
-                  <rect x="-15" y="18" width="30" height="45" rx="8" class="father-shirt"/>
-                  
-                  <!-- Father's briefcase -->
-                  <line x1="-15" y1="35" x2="-35" y2="45" stroke="#654321" stroke-width="3"/>
-                  <rect x="-40" y="40" width="15" height="20" rx="3" fill="#654321"/>
-                  
-                  <!-- Father connecting arm to mother -->
-                  <line x1="15" y1="30" x2="35" y2="30" stroke="#F4A460" stroke-width="3"/>
-                </g>
-                
-                <!-- Mother -->
-                <g transform="translate(125, 110)">
-                  <circle cx="0" cy="0" r="18" class="parent-skin"/>
-                  <path d="M-18 -15 Q0 -25 18 -15 Q12 -5 0 -10 Q-12 -5 -18 -15" class="mother-hair"/>
-                  <rect x="-15" y="18" width="30" height="45" rx="8" class="mother-shirt"/>
-                  
-                  <!-- Mother's handbag -->
-                  <line x1="15" y1="35" x2="30" y2="50" stroke="#654321" stroke-width="3"/>
-                  <rect x="25" y="45" width="12" height="15" rx="3" fill="#8B4513"/>
-                </g>
-                
-                <!-- Heart symbol -->
-                <path d="M95 80 Q90 70 85 80 Q90 90 95 100 Q100 90 105 80 Q100 70 95 80" fill="#FF69B4" opacity="0.7"/>
-              </svg>
-            `)}")`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            borderRadius: '50%'
-          }} />
+          <img 
+            src={orangTuaImage} 
+            alt="Orang Tua"
+            style={{
+              width: '210px',
+              height: '210px',
+              objectFit: 'contain'
+            }}
+          />
         </div>
       )
     }
@@ -256,16 +139,21 @@ const MultiLoginPage: React.FC = () => {
     
     setIsLoading(true)
     
-    // Simulate login process
+    // Check dummy accounts
+    const account = DUMMY_ACCOUNTS[selectedUserType]
+    
     setTimeout(() => {
       setIsLoading(false)
-      console.log('Login attempt:', { 
-        userType: selectedUserType, 
-        email: formData.email,
-        password: formData.password 
-      })
-      alert(`Login berhasil sebagai ${userTypeConfig[selectedUserType].title}`)
-    }, 2000)
+      
+      if (formData.email === account.email && formData.password === account.password) {
+        alert(`Login berhasil sebagai ${userTypeConfig[selectedUserType].title}!`)
+        // Here you would typically navigate to homepage
+        // For now, just redirect to home
+        window.location.href = '/'
+      } else {
+        alert(`Login gagal! Gunakan akun berikut:\nEmail: ${account.email}\nPassword: ${account.password}`)
+      }
+    }, 1500)
   }
 
   const togglePasswordVisibility = () => {
@@ -275,7 +163,7 @@ const MultiLoginPage: React.FC = () => {
   return (
     <div style={{ 
       minHeight: '100vh',
-      background: `linear-gradient(135deg, ${userTypeConfig[selectedUserType].color} 0%, rgba(255, 255, 255, 0.9) 100%)`,
+      background: `linear-gradient(135deg, ${COLORS.primary} 0%, rgba(244, 163, 0, 0.9) 100%)`,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -290,7 +178,7 @@ const MultiLoginPage: React.FC = () => {
         left: '10%',
         width: '100px',
         height: '100px',
-        background: 'rgba(244, 163, 0, 0.2)',
+        background: `rgba(244, 163, 0, 0.2)`,
         borderRadius: '50%',
         animation: 'float 4s ease-in-out infinite'
       }}></div>
@@ -301,7 +189,7 @@ const MultiLoginPage: React.FC = () => {
         right: '15%',
         width: '150px',
         height: '150px',
-        background: 'rgba(255, 255, 255, 0.1)',
+        background: `rgba(255, 255, 255, 0.1)`,
         borderRadius: '50%',
         animation: 'float 6s ease-in-out infinite reverse'
       }}></div>
@@ -322,7 +210,7 @@ const MultiLoginPage: React.FC = () => {
         {/* Left Side - Illustration */}
         {windowWidth > 768 && (
         <div style={{
-          background: `linear-gradient(45deg, ${userTypeConfig[selectedUserType].color}, rgba(244, 163, 0, 0.8))`,
+          background: `linear-gradient(45deg, ${COLORS.primary}, ${COLORS.accent})`,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -391,7 +279,7 @@ const MultiLoginPage: React.FC = () => {
             <div style={{
               width: '50px',
               height: '50px',
-              background: `linear-gradient(45deg, ${userTypeConfig[selectedUserType].color}, rgb(244, 163, 0))`,
+              background: `linear-gradient(45deg, ${COLORS.primary}, ${COLORS.accent})`,
               borderRadius: '12px',
               display: 'flex',
               alignItems: 'center',
@@ -409,7 +297,7 @@ const MultiLoginPage: React.FC = () => {
             <h1 style={{
               fontSize: '28px',
               fontWeight: '700',
-              color: userTypeConfig[selectedUserType].color,
+              color: COLORS.primary,
               margin: 0
             }}>
               LoginPage
@@ -439,14 +327,14 @@ const MultiLoginPage: React.FC = () => {
                   style={{
                     padding: '12px 20px',
                     border: selectedUserType === type 
-                      ? `2px solid ${userTypeConfig[type].color}`
+                      ? `2px solid ${COLORS.primary}`
                       : '2px solid #e5e7eb',
                     borderRadius: '10px',
                     background: selectedUserType === type 
-                      ? `${userTypeConfig[type].color}15`
+                      ? `${COLORS.primary}15`
                       : 'white',
                     color: selectedUserType === type 
-                      ? userTypeConfig[type].color
+                      ? COLORS.primary
                       : '#6b7280',
                     fontWeight: selectedUserType === type ? '600' : '500',
                     cursor: 'pointer',
@@ -491,7 +379,7 @@ const MultiLoginPage: React.FC = () => {
                   boxSizing: 'border-box'
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = userTypeConfig[selectedUserType].color
+                  e.target.style.borderColor = COLORS.primary
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = '#e5e7eb'
@@ -528,7 +416,7 @@ const MultiLoginPage: React.FC = () => {
                     boxSizing: 'border-box'
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = userTypeConfig[selectedUserType].color
+                    e.target.style.borderColor = COLORS.primary
                   }}
                   onBlur={(e) => {
                     e.target.style.borderColor = '#e5e7eb'
@@ -558,7 +446,7 @@ const MultiLoginPage: React.FC = () => {
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.backgroundColor = '#f3f4f6'
-                    e.currentTarget.style.color = userTypeConfig[selectedUserType].color
+                    e.currentTarget.style.color = COLORS.primary
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.backgroundColor = 'transparent'
@@ -609,7 +497,7 @@ const MultiLoginPage: React.FC = () => {
                 padding: '16px',
                 background: isLoading 
                   ? '#9ca3af' 
-                  : `linear-gradient(45deg, ${userTypeConfig[selectedUserType].color}, rgb(244, 163, 0))`,
+                  : `linear-gradient(45deg, ${COLORS.primary}, ${COLORS.accent})`,
                 color: 'white',
                 border: 'none',
                 borderRadius: '12px',
@@ -656,11 +544,11 @@ const MultiLoginPage: React.FC = () => {
             </button>
 
             {/* Forgot Password Link */}
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
               <a
                 href="#"
                 style={{
-                  color: userTypeConfig[selectedUserType].color,
+                  color: COLORS.primary,
                   textDecoration: 'none',
                   fontSize: '14px',
                   fontWeight: '500'
@@ -674,6 +562,32 @@ const MultiLoginPage: React.FC = () => {
               >
                 Lupa password?
               </a>
+            </div>
+
+            {/* Dummy Account Info */}
+            <div style={{
+              background: `${COLORS.accent}20`,
+              padding: '15px',
+              borderRadius: '10px',
+              border: `1px solid ${COLORS.accent}40`
+            }}>
+              <h4 style={{
+                margin: '0 0 10px 0',
+                fontSize: '14px',
+                color: COLORS.primary,
+                fontWeight: '600'
+              }}>
+                Akun Demo - {userTypeConfig[selectedUserType].title}
+              </h4>
+              <p style={{
+                margin: '0',
+                fontSize: '13px',
+                color: '#666',
+                lineHeight: '1.4'
+              }}>
+                <strong>Email:</strong> {DUMMY_ACCOUNTS[selectedUserType].email}<br/>
+                <strong>Password:</strong> {DUMMY_ACCOUNTS[selectedUserType].password}
+              </p>
             </div>
           </form>
         </div>
