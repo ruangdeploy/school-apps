@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import LoginPageApp from './LoginPageApp.tsx'
+import AppRouter from './pages/AppRouter.tsx'
 
 // Register Service Worker for PWA functionality
 if ('serviceWorker' in navigator) {
@@ -28,6 +28,6 @@ window.addEventListener('orientationchange', setViewportHeight)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <LoginPageApp />
+    <AppRouter />
   </StrictMode>,
 )
