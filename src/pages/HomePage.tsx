@@ -1,34 +1,41 @@
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { 
   Calendar, 
   Clock, 
-  CheckCircle, 
-  AlertCircle,
-  TrendingUp,
-  Users,
-  MapPin,
-  Bell
+  BookOpen,
+  Award,
+  Bell,
+  ChevronRight,
+  CheckCircle
 } from 'lucide-react'
-import { Button } from '../components/ui/Button'
-import { SkeletonCard, SkeletonText } from '../components/ui/Skeleton'
-import { useAuthStore } from '../stores/authStore'
-import { useAttendanceStore } from '../stores/attendanceStore'
-import { cn } from '../utils/cn'
 
-interface QuickStats {
-  present: number
-  absent: number
-  late: number
-  total: number
+// Color palette constants - same as login page
+const COLORS = {
+  primary: 'rgb(15, 76, 92)',
+  accent: 'rgb(244, 163, 0)',
+  white: 'rgb(255, 255, 255)'
+}
+
+// Mock user data - in real app this would come from auth store
+const mockUser = {
+  name: 'John Doe',
+  role: 'Siswa',
+  class: 'XII IPA 1',
+  avatar: null
+}
+
+// Mock data for demo
+const mockStats = {
+  attendance: { present: 85, total: 100 },
+  assignments: { completed: 12, total: 15 },
+  grades: { average: 87.5, trending: 'up' },
+  announcements: 3
 }
 
 const HomePage: React.FC = () => {
-  const { user } = useAuthStore()
-  const { getTodayAttendance, setLoading, isLoading } = useAttendanceStore()
   const [currentTime, setCurrentTime] = useState(new Date())
-  const [todayStats, setTodayStats] = useState<QuickStats | null>(null)
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false)
+  const [user] = useState(mockUser)
 
   // Update time every second
   useEffect(() => {
@@ -36,38 +43,16 @@ const HomePage: React.FC = () => {
     return () => clearInterval(timer)
   }, [])
 
-  // Load today's attendance data
-  useEffect(() => {
-    const loadTodayData = () => {
-      setLoading(true)
-      
-      // Simulate API delay for realistic loading
-      setTimeout(() => {
-        const todayRecords = getTodayAttendance()
-        const stats: QuickStats = {
-          present: todayRecords.filter(r => r.status === 'present').length,
-          absent: todayRecords.filter(r => r.status === 'absent').length,
-          late: todayRecords.filter(r => r.status === 'late').length,
-          total: todayRecords.length
-        }
-        setTodayStats(stats)
-        setLoading(false)
-      }, 1200)
-    }
-
-    loadTodayData()
-  }, [getTodayAttendance, setLoading])
-
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
+    return date.toLocaleTimeString('id-ID', { 
+      hour: '2-digit', 
       minute: '2-digit',
-      hour12: false
+      second: '2-digit'
     })
   }
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('id-ID', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -75,363 +60,531 @@ const HomePage: React.FC = () => {
     })
   }
 
-  const handleQuickAttendance = async () => {
-    if ('geolocation' in navigator) {
-      setShowLocationPrompt(true)
-      
-      try {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 60000
-          })
-        })
-        
-        console.log('Location obtained:', position.coords)
-        // Here you would implement the attendance submission
-        setShowLocationPrompt(false)
-        
-        // Haptic feedback
-        if ('vibrate' in navigator) {
-          navigator.vibrate([100, 50, 100])
-        }
-      } catch (error) {
-        console.error('Location error:', error)
-        setShowLocationPrompt(false)
-        // Still allow attendance without precise location
-      }
+  const quickActions = [
+    {
+      title: 'Absensi',
+      subtitle: 'Catat kehadiran hari ini',
+      icon: CheckCircle,
+      color: COLORS.primary,
+      action: () => window.location.href = '/attendance'
+    },
+    {
+      title: 'Jadwal',
+      subtitle: 'Lihat jadwal pelajaran',
+      icon: Calendar,
+      color: COLORS.accent,
+      action: () => window.location.href = '/schedule'
+    },
+    {
+      title: 'Tugas',
+      subtitle: 'Kelola tugas dan PR',
+      icon: BookOpen,
+      color: COLORS.primary,
+      action: () => window.location.href = '/assignments'
+    },
+    {
+      title: 'Nilai',
+      subtitle: 'Lihat rapor dan nilai',
+      icon: Award,
+      color: COLORS.accent,
+      action: () => window.location.href = '/grades'
     }
-  }
-
-  if (isLoading || !todayStats) {
-    return <HomePageLoading />
-  }
+  ]
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div style={{
+      minHeight: '100vh',
+      background: `linear-gradient(135deg, ${COLORS.primary} 0%, rgba(244, 163, 0, 0.1) 100%)`,
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    }}>
       {/* Header */}
-      <motion.div
-        className="bg-gradient-to-r from-primary-500 to-primary-600 safe-area-top"
-        initial={{ opacity: 0, y: -50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <div className="px-6 pt-6 pb-8">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <motion.h1
-                className="text-2xl font-bold text-white mb-1"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                Good {currentTime.getHours() < 12 ? 'Morning' : currentTime.getHours() < 17 ? 'Afternoon' : 'Evening'}, {user?.name || 'Student'}!
-              </motion.h1>
-              <motion.p
-                className="text-primary-100"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                {formatDate(currentTime)}
-              </motion.p>
+      <div style={{
+        background: COLORS.white,
+        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10
+      }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: '0 20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          height: '70px'
+        }}>
+          {/* Logo */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              background: `linear-gradient(45deg, ${COLORS.primary}, ${COLORS.accent})`,
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              marginRight: '15px',
+              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)'
+            }}>
+              <BookOpen size={24} />
             </div>
-            
-            <motion.div
-              className="text-right"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <div className="text-2xl font-bold text-white">
-                {formatTime(currentTime)}
-              </div>
-              <div className="text-primary-100 text-sm flex items-center">
-                <Clock size={14} className="mr-1" />
-                Live
-              </div>
-            </motion.div>
+            <h1 style={{
+              fontSize: '24px',
+              fontWeight: '700',
+              color: COLORS.primary,
+              margin: 0
+            }}>
+              School App
+            </h1>
           </div>
-        </div>
-      </motion.div>
 
-      {/* Quick Actions */}
-      <motion.div
-        className="px-6 -mt-4"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={handleQuickAttendance}
-            icon={<CheckCircle size={20} />}
-            className="h-16 flex-col bg-white text-primary-600 hover:bg-primary-50 border border-primary-200 shadow-soft"
-          >
-            <span className="text-sm font-semibold">Mark Present</span>
-            <span className="text-xs opacity-80">Quick Check-in</span>
-          </Button>
-          
-          <Button
-            variant="secondary"
-            size="lg"
-            icon={<Calendar size={20} />}
-            className="h-16 flex-col shadow-soft"
-          >
-            <span className="text-sm font-semibold">View Calendar</span>
-            <span className="text-xs opacity-80">Schedule & Events</span>
-          </Button>
-        </div>
-      </motion.div>
+          {/* User Menu */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '15px'
+          }}>
+            <button style={{
+              position: 'relative',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '8px',
+              borderRadius: '50%',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = '#f3f4f6'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}>
+              <Bell size={20} color={COLORS.primary} />
+              <div style={{
+                position: 'absolute',
+                top: '5px',
+                right: '5px',
+                width: '8px',
+                height: '8px',
+                background: COLORS.accent,
+                borderRadius: '50%'
+              }}></div>
+            </button>
 
-      {/* Today's Stats */}
-      <motion.div
-        className="px-6 mb-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-      >
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Today's Overview</h2>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <StatsCard
-            title="Present"
-            value={todayStats.present}
-            total={todayStats.total}
-            color="success"
-            icon={<CheckCircle size={18} />}
-            delay={0.1}
-          />
-          <StatsCard
-            title="Attendance Rate"
-            value={Math.round((todayStats.present / todayStats.total) * 100)}
-            suffix="%"
-            color="primary"
-            icon={<TrendingUp size={18} />}
-            delay={0.2}
-          />
-          <StatsCard
-            title="Late Arrivals"
-            value={todayStats.late}
-            color="warning"
-            icon={<Clock size={18} />}
-            delay={0.3}
-          />
-          <StatsCard
-            title="Total Students"
-            value={todayStats.total}
-            color="secondary"
-            icon={<Users size={18} />}
-            delay={0.4}
-          />
-        </div>
-      </motion.div>
-
-      {/* Recent Activity */}
-      <motion.div
-        className="px-6 mb-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-      >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-          <Button variant="ghost" size="sm">View All</Button>
-        </div>
-        
-        <div className="space-y-3">
-          <ActivityItem
-            type="checkin"
-            time="08:30 AM"
-            message="John Doe marked present"
-            delay={0.1}
-          />
-          <ActivityItem
-            type="late"
-            time="08:45 AM"
-            message="Sarah Smith marked late"
-            delay={0.2}
-          />
-          <ActivityItem
-            type="report"
-            time="09:00 AM"
-            message="Math class attendance submitted"
-            delay={0.3}
-          />
-        </div>
-      </motion.div>
-
-      {/* Location Permission Prompt */}
-      <AnimatePresence>
-        {showLocationPrompt && (
-          <motion.div
-            className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-white rounded-2xl p-6 max-w-sm w-full"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-            >
-              <div className="text-center">
-                <MapPin className="mx-auto text-primary-500 mb-4" size={48} />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Enable Location Access
-                </h3>
-                <p className="text-gray-600 mb-6 text-sm">
-                  We need your location to verify attendance and ensure you're on school premises.
-                </p>
-                <div className="flex space-x-3">
-                  <Button
-                    variant="secondary"
-                    fullWidth
-                    onClick={() => setShowLocationPrompt(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="primary"
-                    fullWidth
-                    onClick={() => {
-                      setShowLocationPrompt(false)
-                      handleQuickAttendance()
-                    }}
-                  >
-                    Allow
-                  </Button>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '8px 15px',
+              background: `${COLORS.primary}10`,
+              borderRadius: '25px',
+              border: `1px solid ${COLORS.primary}20`
+            }}>
+              <div style={{
+                width: '35px',
+                height: '35px',
+                background: `linear-gradient(45deg, ${COLORS.primary}, ${COLORS.accent})`,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 'bold'
+              }}>
+                {user.name.charAt(0)}
+              </div>
+              <div>
+                <div style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: COLORS.primary
+                }}>
+                  {user.name}
+                </div>
+                <div style={{
+                  fontSize: '12px',
+                  color: '#666'
+                }}>
+                  {user.role} - {user.class}
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-// Stats Card Component
-const StatsCard: React.FC<{
-  title: string
-  value: number
-  total?: number
-  suffix?: string
-  color: 'success' | 'warning' | 'primary' | 'secondary'
-  icon: React.ReactNode
-  delay?: number
-}> = ({ title, value, total, suffix, color, icon, delay = 0 }) => {
-  const colorClasses = {
-    success: 'bg-success-50 text-success-700 border-success-200',
-    warning: 'bg-warning-50 text-warning-700 border-warning-200',
-    primary: 'bg-primary-50 text-primary-700 border-primary-200',
-    secondary: 'bg-gray-50 text-gray-700 border-gray-200'
-  }
-
-  return (
-    <motion.div
-      className={cn('p-4 rounded-xl border', colorClasses[color])}
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay, duration: 0.3 }}
-      whileHover={{ scale: 1.02 }}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium opacity-80">{title}</span>
-        {icon}
-      </div>
-      <div className="flex items-baseline">
-        <span className="text-2xl font-bold">
-          {value}{suffix}
-        </span>
-        {total && (
-          <span className="text-sm opacity-60 ml-1">
-            /{total}
-          </span>
-        )}
-      </div>
-    </motion.div>
-  )
-}
-
-// Activity Item Component
-const ActivityItem: React.FC<{
-  type: 'checkin' | 'late' | 'report'
-  time: string
-  message: string
-  delay?: number
-}> = ({ type, time, message, delay = 0 }) => {
-  const icons = {
-    checkin: <CheckCircle size={16} className="text-success-500" />,
-    late: <Clock size={16} className="text-warning-500" />,
-    report: <Bell size={16} className="text-primary-500" />
-  }
-
-  return (
-    <motion.div
-      className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-100"
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay }}
-    >
-      <div className="flex-shrink-0">
-        {icons[type]}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-gray-900 truncate">{message}</p>
-        <p className="text-xs text-gray-500">{time}</p>
-      </div>
-    </motion.div>
-  )
-}
-
-// Loading Component
-const HomePageLoading = () => (
-  <div className="min-h-screen bg-gray-50 pb-24">
-    <div className="bg-gradient-to-r from-primary-500 to-primary-600 safe-area-top">
-      <div className="px-6 pt-6 pb-8">
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <div className="h-8 bg-white/20 rounded-lg w-48 mb-2"></div>
-            <div className="h-4 bg-white/20 rounded w-32"></div>
-          </div>
-          <div className="text-right">
-            <div className="h-8 bg-white/20 rounded w-20 mb-1"></div>
-            <div className="h-4 bg-white/20 rounded w-16"></div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    
-    <div className="px-6 -mt-4">
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <SkeletonCard className="h-16" />
-        <SkeletonCard className="h-16" />
-      </div>
-      
-      <div className="mb-6">
-        <SkeletonText lines={1} className="mb-4" />
-        <div className="grid grid-cols-2 gap-4">
-          {Array.from({ length: 4 }, (_, i) => (
-            <SkeletonCard key={i} className="h-20" />
+
+      {/* Main Content */}
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '30px 20px'
+      }}>
+        {/* Welcome Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          style={{
+            background: COLORS.white,
+            borderRadius: '20px',
+            padding: '30px',
+            marginBottom: '30px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+            display: 'grid',
+            gridTemplateColumns: '1fr auto',
+            alignItems: 'center',
+            gap: '30px'
+          }}
+        >
+          <div>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: COLORS.primary,
+              margin: '0 0 10px 0'
+            }}>
+              Selamat Datang, {user.name}! 👋
+            </h2>
+            <p style={{
+              fontSize: '16px',
+              color: '#666',
+              margin: '0 0 20px 0'
+            }}>
+              Semoga hari ini menjadi hari yang produktif untuk belajar dan berkembang.
+            </p>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '20px',
+              fontSize: '14px',
+              color: '#888'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Calendar size={16} />
+                {formatDate(currentTime)}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={16} />
+                {formatTime(currentTime)}
+              </div>
+            </div>
+          </div>
+          
+          <div style={{
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '120px',
+              height: '120px',
+              background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontSize: '48px',
+              fontWeight: 'bold',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
+            }}>
+              {user.name.charAt(0)}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Quick Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '20px',
+            marginBottom: '30px'
+          }}
+        >
+          {[
+            {
+              title: 'Kehadiran',
+              value: `${mockStats.attendance.present}/${mockStats.attendance.total}`,
+              subtitle: 'Hari hadir',
+              icon: CheckCircle,
+              color: COLORS.primary,
+              percentage: (mockStats.attendance.present / mockStats.attendance.total) * 100
+            },
+            {
+              title: 'Tugas',
+              value: `${mockStats.assignments.completed}/${mockStats.assignments.total}`,
+              subtitle: 'Tugas selesai',
+              icon: BookOpen,
+              color: COLORS.accent,
+              percentage: (mockStats.assignments.completed / mockStats.assignments.total) * 100
+            },
+            {
+              title: 'Rata-rata Nilai',
+              value: mockStats.grades.average.toString(),
+              subtitle: 'Nilai keseluruhan',
+              icon: Award,
+              color: COLORS.primary,
+              percentage: mockStats.grades.average
+            },
+            {
+              title: 'Pengumuman',
+              value: mockStats.announcements.toString(),
+              subtitle: 'Belum dibaca',
+              icon: Bell,
+              color: COLORS.accent,
+              percentage: null
+            }
+          ].map((stat, index) => (
+            <div
+              key={index}
+              style={{
+                background: COLORS.white,
+                borderRadius: '15px',
+                padding: '25px',
+                boxShadow: '0 5px 20px rgba(0, 0, 0, 0.08)',
+                border: `1px solid ${stat.color}20`
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '15px'
+              }}>
+                <div style={{
+                  width: '50px',
+                  height: '50px',
+                  background: `${stat.color}15`,
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <stat.icon size={24} color={stat.color} />
+                </div>
+                {stat.percentage && (
+                  <div style={{
+                    fontSize: '12px',
+                    color: stat.percentage > 80 ? '#10b981' : stat.percentage > 60 ? COLORS.accent : '#ef4444',
+                    fontWeight: '600'
+                  }}>
+                    {stat.percentage.toFixed(0)}%
+                  </div>
+                )}
+              </div>
+              <h3 style={{
+                fontSize: '24px',
+                fontWeight: '700',
+                color: COLORS.primary,
+                margin: '0 0 5px 0'
+              }}>
+                {stat.value}
+              </h3>
+              <p style={{
+                fontSize: '14px',
+                color: '#666',
+                margin: 0
+              }}>
+                {stat.subtitle}
+              </p>
+            </div>
           ))}
-        </div>
-      </div>
-      
-      <div className="mb-6">
-        <SkeletonText lines={1} className="mb-4" />
-        <div className="space-y-3">
-          {Array.from({ length: 3 }, (_, i) => (
-            <SkeletonCard key={i} className="h-16" />
-          ))}
-        </div>
+        </motion.div>
+
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          style={{
+            background: COLORS.white,
+            borderRadius: '20px',
+            padding: '30px',
+            marginBottom: '30px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          <h3 style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: COLORS.primary,
+            margin: '0 0 20px 0'
+          }}>
+            Aksi Cepat
+          </h3>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '15px'
+          }}>
+            {quickActions.map((action, index) => (
+              <button
+                key={index}
+                onClick={action.action}
+                style={{
+                  background: `${action.color}08`,
+                  border: `2px solid ${action.color}20`,
+                  borderRadius: '15px',
+                  padding: '20px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  textAlign: 'left'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = `${action.color}15`
+                  e.currentTarget.style.borderColor = `${action.color}40`
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = `${action.color}08`
+                  e.currentTarget.style.borderColor = `${action.color}20`
+                  e.currentTarget.style.transform = 'translateY(0)'
+                }}
+              >
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '10px'
+                }}>
+                  <div style={{
+                    width: '45px',
+                    height: '45px',
+                    background: action.color,
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <action.icon size={22} color="white" />
+                  </div>
+                  <ChevronRight size={20} color={action.color} />
+                </div>
+                <h4 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: COLORS.primary,
+                  margin: '0 0 5px 0'
+                }}>
+                  {action.title}
+                </h4>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#666',
+                  margin: 0
+                }}>
+                  {action.subtitle}
+                </p>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Recent Activities */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          style={{
+            background: COLORS.white,
+            borderRadius: '20px',
+            padding: '30px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          <h3 style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: COLORS.primary,
+            margin: '0 0 20px 0'
+          }}>
+            Aktivitas Terbaru
+          </h3>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '15px'
+          }}>
+            {[
+              {
+                title: 'Tugas Matematika dikumpulkan',
+                time: '2 jam yang lalu',
+                icon: CheckCircle,
+                color: '#10b981'
+              },
+              {
+                title: 'Absensi hari ini tercatat',
+                time: '3 jam yang lalu',
+                icon: Clock,
+                color: COLORS.primary
+              },
+              {
+                title: 'Nilai UTS Fisika diumumkan',
+                time: '1 hari yang lalu',
+                icon: Award,
+                color: COLORS.accent
+              },
+              {
+                title: 'Pengumuman libur nasional',
+                time: '2 hari yang lalu',
+                icon: Bell,
+                color: '#6366f1'
+              }
+            ].map((activity, index) => (
+              <div
+                key={index}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '15px',
+                  padding: '15px',
+                  background: '#f9fafb',
+                  borderRadius: '12px',
+                  border: '1px solid #e5e7eb'
+                }}
+              >
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  background: `${activity.color}15`,
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <activity.icon size={20} color={activity.color} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h4 style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: COLORS.primary,
+                    margin: '0 0 5px 0'
+                  }}>
+                    {activity.title}
+                  </h4>
+                  <p style={{
+                    fontSize: '14px',
+                    color: '#666',
+                    margin: 0
+                  }}>
+                    {activity.time}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </div>
-  </div>
-)
+  )
+}
 
 export default HomePage

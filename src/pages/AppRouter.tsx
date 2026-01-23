@@ -2,9 +2,10 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import MultiLoginPage from './MultiLoginPage'
 import HomePage from './HomePage'
-import StudentsPage from './StudentsPage'
 import AttendancePage from './AttendancePage'
-import ProfilePage from './ProfilePage'
+import SchedulePage from './SchedulePage'
+import AssignmentsPage from './AssignmentsPage'
+import GradesPage from './GradesPage'
 
 const AppRouter: React.FC = () => {
   return (
@@ -12,9 +13,10 @@ const AppRouter: React.FC = () => {
       <Routes>
         <Route path="/login" element={<MultiLoginPage />} />
         <Route path="/home" element={<HomePage />} />
-        <Route path="/students" element={<StudentsPage />} />
         <Route path="/attendance" element={<AttendancePage />} />
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/schedule" element={<SchedulePage />} />
+        <Route path="/assignments" element={<AssignmentsPage />} />
+        <Route path="/grades" element={<GradesPage />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>

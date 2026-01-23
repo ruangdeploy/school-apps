@@ -19,9 +19,9 @@ const COLORS = {
 
 // Dummy accounts for easy login
 const DUMMY_ACCOUNTS = {
-  siswa: { email: 'siswa@school.com', password: '123456' },
-  guru: { email: 'guru@school.com', password: '123456' },
-  orangtua: { email: 'ortu@school.com', password: '123456' }
+  siswa: { email: 'murid@sekolah.com', password: 'murid123' },
+  guru: { email: 'guru@sekolah.com', password: 'guru123' },
+  orangtua: { email: 'orangtua@sekolah.com', password: 'orangtua123' }
 }
 
 const MultiLoginPage: React.FC = () => {
@@ -147,9 +147,8 @@ const MultiLoginPage: React.FC = () => {
       
       if (formData.email === account.email && formData.password === account.password) {
         alert(`Login berhasil sebagai ${userTypeConfig[selectedUserType].title}!`)
-        // Here you would typically navigate to homepage
-        // For now, just redirect to home
-        window.location.href = '/'
+        // Navigate to homepage
+        window.location.href = '/home'
       } else {
         alert(`Login gagal! Gunakan akun berikut:\nEmail: ${account.email}\nPassword: ${account.password}`)
       }
