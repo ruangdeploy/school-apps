@@ -518,22 +518,6 @@ const HomePage: React.FC = () => {
               percentage: null
             },
             {
-              title: 'Kehadiran Total',
-              value: `${mockStats.attendance.present}/${mockStats.attendance.total}`,
-              subtitle: 'Hari hadir keseluruhan',
-              icon: CheckCircle,
-              color: COLORS.primary,
-              percentage: (mockStats.attendance.present / mockStats.attendance.total) * 100
-            },
-            {
-              title: 'Tugas',
-              value: `${mockStats.assignments.completed}/${mockStats.assignments.total}`,
-              subtitle: 'Tugas selesai',
-              icon: BookOpen,
-              color: COLORS.accent,
-              percentage: (mockStats.assignments.completed / mockStats.assignments.total) * 100
-            },
-            {
               title: 'Rata-rata Nilai',
               value: mockStats.grades.average.toString(),
               subtitle: 'Nilai keseluruhan',

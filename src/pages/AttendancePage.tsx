@@ -7,8 +7,7 @@ import {
   XCircle, 
   AlertCircle,
   ArrowLeft,
-  MapPin,
-  Users
+  MapPin
 } from 'lucide-react'
 
 // Color palette constants - same as login page
@@ -441,92 +440,6 @@ const AttendancePage: React.FC = () => {
               'Absensi hari ini telah lengkap. Terima kasih!'
             }
           </div>
-        </motion.div>
-
-        {/* Statistics */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '20px',
-            marginBottom: '30px'
-          }}
-        >
-          {[
-            {
-              title: 'Hadir',
-              value: mockAttendanceData.todayStats.present,
-              icon: CheckCircle,
-              color: '#10b981'
-            },
-            {
-              title: 'Terlambat',
-              value: mockAttendanceData.todayStats.late,
-              icon: AlertCircle,
-              color: COLORS.accent
-            },
-            {
-              title: 'Tidak Hadir',
-              value: mockAttendanceData.todayStats.absent,
-              icon: XCircle,
-              color: '#ef4444'
-            },
-            {
-              title: 'Total Siswa',
-              value: mockAttendanceData.todayStats.total,
-              icon: Users,
-              color: COLORS.primary
-            }
-          ].map((stat, index) => (
-            <div
-              key={index}
-              style={{
-                background: COLORS.white,
-                borderRadius: '15px',
-                padding: '25px',
-                boxShadow: '0 5px 20px rgba(0, 0, 0, 0.08)',
-                border: `1px solid ${stat.color}20`
-              }}
-            >
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '15px'
-              }}>
-                <div style={{
-                  width: '50px',
-                  height: '50px',
-                  background: `${stat.color}15`,
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <stat.icon size={24} color={stat.color} />
-                </div>
-                <div>
-                  <h3 style={{
-                    fontSize: '28px',
-                    fontWeight: '700',
-                    color: COLORS.primary,
-                    margin: '0 0 5px 0'
-                  }}>
-                    {stat.value}
-                  </h3>
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#666',
-                    margin: 0
-                  }}>
-                    {stat.title}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
         </motion.div>
 
         {/* Recent Records */}
