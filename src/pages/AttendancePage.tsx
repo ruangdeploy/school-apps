@@ -27,17 +27,21 @@ const mockAttendanceData = {
     total: 31
   },
   recentRecords: [
-    { date: '2024-01-22', status: 'present', time: '07:45', location: 'Kelas XII IPA 1' },
-    { date: '2024-01-21', status: 'present', time: '07:50', location: 'Kelas XII IPA 1' },
-    { date: '2024-01-20', status: 'late', time: '08:15', location: 'Kelas XII IPA 1' },
-    { date: '2024-01-19', status: 'present', time: '07:40', location: 'Kelas XII IPA 1' },
-    { date: '2024-01-18', status: 'present', time: '07:55', location: 'Kelas XII IPA 1' }
+    { date: '2026-01-24', status: 'present', timeIn: '07:45', timeOut: '15:30', location: 'Kelas XII IPA 1' },
+    { date: '2026-01-23', status: 'present', timeIn: '07:50', timeOut: '15:25', location: 'Kelas XII IPA 1' },
+    { date: '2026-01-22', status: 'late', timeIn: '08:15', timeOut: '15:35', location: 'Kelas XII IPA 1' },
+    { date: '2026-01-21', status: 'present', timeIn: '07:40', timeOut: '15:20', location: 'Kelas XII IPA 1' },
+    { date: '2026-01-20', status: 'present', timeIn: '07:55', timeOut: '15:30', location: 'Kelas XII IPA 1' }
   ]
 }
 
 const AttendancePage: React.FC = () => {
   const [isCheckingIn, setIsCheckingIn] = useState(false)
+  const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [todayCheckedIn, setTodayCheckedIn] = useState(false)
+  const [todayCheckedOut, setTodayCheckedOut] = useState(false)
+  const [checkInTime, setCheckInTime] = useState<string | null>(null)
+  const [checkOutTime, setCheckOutTime] = useState<string | null>(null)
 
   const handleCheckIn = () => {
     setIsCheckingIn(true)
@@ -45,7 +49,21 @@ const AttendancePage: React.FC = () => {
     setTimeout(() => {
       setIsCheckingIn(false)
       setTodayCheckedIn(true)
-      alert('Absensi berhasil! Anda hadir pada ' + new Date().toLocaleTimeString('id-ID'))
+      const currentTime = new Date().toLocaleTimeString('id-ID')
+      setCheckInTime(currentTime)
+      console.log('Absen masuk berhasil! Anda hadir pada ' + currentTime)
+    }, 2000)
+  }
+
+  const handleCheckOut = () => {
+    setIsCheckingOut(true)
+    // Simulate check-out process
+    setTimeout(() => {
+      setIsCheckingOut(false)
+      setTodayCheckedOut(true)
+      const currentTime = new Date().toLocaleTimeString('id-ID')
+      setCheckOutTime(currentTime)
+      console.log('Absen keluar berhasil! Anda pulang pada ' + currentTime)
     }, 2000)
   }
 
@@ -150,94 +168,183 @@ const AttendancePage: React.FC = () => {
             borderRadius: '20px',
             padding: '30px',
             marginBottom: '30px',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-            textAlign: 'center'
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
           }}
         >
           <div style={{
-            width: '100px',
-            height: '100px',
-            background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 20px auto',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
+            textAlign: 'center',
+            marginBottom: '30px'
           }}>
-            <Clock size={48} color="white" />
+            <div style={{
+              width: '100px',
+              height: '100px',
+              background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
+            }}>
+              <Clock size={48} color="white" />
+            </div>
+
+            <h2 style={{
+              fontSize: '24px',
+              fontWeight: '700',
+              color: COLORS.primary,
+              margin: '0 0 10px 0'
+            }}>
+              Absensi Hari Ini
+            </h2>
+
+            <p style={{
+              fontSize: '16px',
+              color: '#666',
+              margin: '0 0 25px 0'
+            }}>
+              Catat waktu masuk dan keluar sekolah Anda
+            </p>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '20px',
+              fontSize: '14px',
+              color: '#888',
+              marginBottom: '25px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Calendar size={16} />
+                {new Date().toLocaleDateString('id-ID', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={16} />
+                {new Date().toLocaleTimeString('id-ID', { 
+                  hour: '2-digit', 
+                  minute: '2-digit'
+                })}
+              </div>
+            </div>
           </div>
 
-          <h2 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: COLORS.primary,
-            margin: '0 0 10px 0'
-          }}>
-            {todayCheckedIn ? 'Absensi Hari Ini Selesai' : 'Absensi Hari Ini'}
-          </h2>
-
-          <p style={{
-            fontSize: '16px',
-            color: '#666',
-            margin: '0 0 25px 0'
-          }}>
-            {todayCheckedIn 
-              ? 'Terima kasih, kehadiran Anda sudah tercatat!' 
-              : 'Tap tombol di bawah untuk mencatat kehadiran Anda'
-            }
-          </p>
-
+          {/* Attendance Status */}
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
             gap: '20px',
-            fontSize: '14px',
-            color: '#888',
-            marginBottom: '25px'
+            marginBottom: '30px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Calendar size={16} />
-              {new Date().toLocaleDateString('id-ID', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Clock size={16} />
-              {new Date().toLocaleTimeString('id-ID', { 
-                hour: '2-digit', 
-                minute: '2-digit'
-              })}
-            </div>
-          </div>
-
-          {!todayCheckedIn && (
-            <button
-              onClick={handleCheckIn}
-              disabled={isCheckingIn}
-              style={{
-                background: isCheckingIn 
-                  ? '#9ca3af' 
-                  : `linear-gradient(45deg, ${COLORS.primary}, ${COLORS.accent})`,
-                color: 'white',
-                border: 'none',
-                borderRadius: '50px',
-                padding: '15px 30px',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: isCheckingIn ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-                minWidth: '200px',
+            {/* Check In Status */}
+            <div style={{
+              padding: '20px',
+              borderRadius: '15px',
+              background: todayCheckedIn ? '#10b98115' : '#f3f4f6',
+              border: `2px solid ${todayCheckedIn ? '#10b981' : '#e5e7eb'}`,
+              textAlign: 'center'
+            }}>
+              <div style={{
+                width: '50px',
+                height: '50px',
+                background: todayCheckedIn ? '#10b981' : '#9ca3af',
+                borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px',
-                margin: '0 auto'
+                margin: '0 auto 15px auto'
+              }}>
+                <CheckCircle size={24} color="white" />
+              </div>
+              <h4 style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: COLORS.primary,
+                margin: '0 0 5px 0'
+              }}>
+                Absen Masuk
+              </h4>
+              <p style={{
+                fontSize: '14px',
+                color: todayCheckedIn ? '#10b981' : '#666',
+                margin: 0,
+                fontWeight: '500'
+              }}>
+                {todayCheckedIn ? `Tercatat: ${checkInTime}` : 'Belum absen'}
+              </p>
+            </div>
+
+            {/* Check Out Status */}
+            <div style={{
+              padding: '20px',
+              borderRadius: '15px',
+              background: todayCheckedOut ? '#10b98115' : '#f3f4f6',
+              border: `2px solid ${todayCheckedOut ? '#10b981' : '#e5e7eb'}`,
+              textAlign: 'center'
+            }}>
+              <div style={{
+                width: '50px',
+                height: '50px',
+                background: todayCheckedOut ? '#10b981' : '#9ca3af',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 15px auto'
+              }}>
+                <CheckCircle size={24} color="white" />
+              </div>
+              <h4 style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: COLORS.primary,
+                margin: '0 0 5px 0'
+              }}>
+                Absen Keluar
+              </h4>
+              <p style={{
+                fontSize: '14px',
+                color: todayCheckedOut ? '#10b981' : '#666',
+                margin: 0,
+                fontWeight: '500'
+              }}>
+                {todayCheckedOut ? `Tercatat: ${checkOutTime}` : 'Belum absen'}
+              </p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '15px'
+          }}>
+            {/* Check In Button */}
+            <button
+              onClick={handleCheckIn}
+              disabled={isCheckingIn || todayCheckedIn}
+              style={{
+                background: (isCheckingIn || todayCheckedIn)
+                  ? '#9ca3af' 
+                  : `linear-gradient(45deg, ${COLORS.primary}, #1e40af)`,
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '15px 20px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: (isCheckingIn || todayCheckedIn) ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
               }}
             >
               {isCheckingIn ? (
@@ -252,14 +359,88 @@ const AttendancePage: React.FC = () => {
                   }}></div>
                   Memproses...
                 </>
+              ) : todayCheckedIn ? (
+                <>
+                  <CheckCircle size={20} />
+                  Sudah Absen Masuk
+                </>
               ) : (
                 <>
                   <CheckCircle size={20} />
-                  Absen Sekarang
+                  Absen Masuk
                 </>
               )}
             </button>
-          )}
+
+            {/* Check Out Button */}
+            <button
+              onClick={handleCheckOut}
+              disabled={isCheckingOut || todayCheckedOut || !todayCheckedIn}
+              style={{
+                background: (isCheckingOut || todayCheckedOut || !todayCheckedIn)
+                  ? '#9ca3af' 
+                  : `linear-gradient(45deg, ${COLORS.accent}, #d97706)`,
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '15px 20px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: (isCheckingOut || todayCheckedOut || !todayCheckedIn) ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              {isCheckingOut ? (
+                <>
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    borderTop: '2px solid white',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }}></div>
+                  Memproses...
+                </>
+              ) : todayCheckedOut ? (
+                <>
+                  <CheckCircle size={20} />
+                  Sudah Absen Keluar
+                </>
+              ) : !todayCheckedIn ? (
+                <>
+                  <XCircle size={20} />
+                  Absen Masuk Dulu
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={20} />
+                  Absen Keluar
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Info Text */}
+          <div style={{
+            marginTop: '20px',
+            textAlign: 'center',
+            fontSize: '14px',
+            color: '#666',
+            fontStyle: 'italic'
+          }}>
+            {!todayCheckedIn ? 
+              'Lakukan absen masuk terlebih dahulu sebelum absen keluar' :
+              !todayCheckedOut ?
+              'Jangan lupa absen keluar saat pulang sekolah' :
+              'Absensi hari ini telah lengkap. Terima kasih!'
+            }
+          </div>
         </motion.div>
 
         {/* Statistics */}
@@ -408,7 +589,7 @@ const AttendancePage: React.FC = () => {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      marginBottom: '5px'
+                      marginBottom: '8px'
                     }}>
                       <h4 style={{
                         fontSize: '16px',
@@ -418,13 +599,16 @@ const AttendancePage: React.FC = () => {
                       }}>
                         {getStatusText(record.status)}
                       </h4>
-                      <span style={{
+                      <div style={{
                         fontSize: '14px',
                         fontWeight: '600',
-                        color: statusColor
+                        color: statusColor,
+                        display: 'flex',
+                        gap: '10px'
                       }}>
-                        {record.time}
-                      </span>
+                        <span>Masuk: {record.timeIn}</span>
+                        <span>Keluar: {record.timeOut}</span>
+                      </div>
                     </div>
                     
                     <div style={{
