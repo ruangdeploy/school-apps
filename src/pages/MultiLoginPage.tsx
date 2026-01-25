@@ -133,7 +133,7 @@ const MultiLoginPage: React.FC = () => {
     e.preventDefault()
     
     if (!formData.email || !formData.password) {
-      alert('Mohon lengkapi semua field')
+      console.log('Mohon lengkapi semua field')
       return
     }
     
@@ -149,11 +149,11 @@ const MultiLoginPage: React.FC = () => {
         // Store user type for profile page
         localStorage.setItem('userType', selectedUserType)
         localStorage.setItem('userEmail', formData.email)
-        alert(`Login berhasil sebagai ${userTypeConfig[selectedUserType].title}!`)
         // Navigate to homepage
         window.location.href = '/home'
       } else {
-        alert(`Login gagal! Gunakan akun berikut:\nEmail: ${account.email}\nPassword: ${account.password}`)
+        // Login failed - could show error message in UI instead of alert
+        console.log(`Login gagal! Gunakan akun berikut:\nEmail: ${account.email}\nPassword: ${account.password}`)
       }
     }, 1500)
   }
