@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Calendar, 
@@ -7,7 +7,9 @@ import {
   XCircle, 
   AlertCircle,
   ArrowLeft,
-  MapPin
+  MapPin,
+  Camera,
+  RotateCcw
 } from 'lucide-react'
 
 // Color palette constants - same as login page
@@ -41,29 +43,119 @@ const AttendancePage: React.FC = () => {
   const [todayCheckedOut, setTodayCheckedOut] = useState(false)
   const [checkInTime, setCheckInTime] = useState<string | null>(null)
   const [checkOutTime, setCheckOutTime] = useState<string | null>(null)
+  
+  // Camera and photo states
+  const [showCheckInCamera, setShowCheckInCamera] = useState(false)
+  const [showCheckOutCamera, setShowCheckOutCamera] = useState(false)
+  const [checkInPhoto, setCheckInPhoto] = useState<string | null>(null)
+  const [checkOutPhoto, setCheckOutPhoto] = useState<string | null>(null)
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
+  const [tempPhoto, setTempPhoto] = useState<string | null>(null) // Foto sementara di modal
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  // Camera functions
+  const startCamera = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user' } 
+      })
+      setCameraStream(stream)
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error)
+      alert('Tidak dapat mengakses kamera. Pastikan izin kamera sudah diberikan.')
+    }
+  }, [])
+
+  const stopCamera = useCallback(() => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop())
+      setCameraStream(null)
+    }
+  }, [cameraStream])
+
+  const capturePhoto = useCallback(() => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current
+      const video = videoRef.current
+      const context = canvas.getContext('2d')
+      
+      if (context) {
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+        context.drawImage(video, 0, 0, canvas.width, canvas.height)
+        
+        const photoDataURL = canvas.toDataURL('image/jpeg', 0.8)
+        
+        // Simpan foto sementara dan hentikan kamera
+        setTempPhoto(photoDataURL)
+        stopCamera()
+      }
+    }
+  }, [stopCamera])
+
+  const retakePhoto = () => {
+    setTempPhoto(null)
+    startCamera()
+  }
+
+  const submitAbsence = () => {
+    if (!tempPhoto) return
+    
+    if (showCheckInCamera) {
+      // Set foto terlebih dahulu, baru submit
+      setCheckInPhoto(tempPhoto)
+      setShowCheckInCamera(false)
+      setTempPhoto(null)
+      
+      // Submit check in langsung tanpa validasi foto (karena sudah ada)
+      setIsCheckingIn(true)
+      setTimeout(() => {
+        setIsCheckingIn(false)
+        setTodayCheckedIn(true)
+        const currentTime = new Date().toLocaleTimeString('id-ID')
+        setCheckInTime(currentTime)
+        console.log('Absen masuk berhasil! Anda hadir pada ' + currentTime)
+      }, 2000)
+      
+    } else if (showCheckOutCamera) {
+      // Set foto terlebih dahulu, baru submit
+      setCheckOutPhoto(tempPhoto)
+      setShowCheckOutCamera(false)
+      setTempPhoto(null)
+      
+      // Submit check out langsung tanpa validasi foto (karena sudah ada)
+      setIsCheckingOut(true)
+      setTimeout(() => {
+        setIsCheckingOut(false)
+        setTodayCheckedOut(true)
+        const currentTime = new Date().toLocaleTimeString('id-ID')
+        setCheckOutTime(currentTime)
+        console.log('Absen keluar berhasil! Anda pulang pada ' + currentTime)
+      }, 2000)
+    }
+  }
+
+  const cancelCamera = () => {
+    stopCamera()
+    setShowCheckInCamera(false)
+    setShowCheckOutCamera(false)
+    setTempPhoto(null)
+  }
 
   const handleCheckIn = () => {
-    setIsCheckingIn(true)
-    // Simulate check-in process
-    setTimeout(() => {
-      setIsCheckingIn(false)
-      setTodayCheckedIn(true)
-      const currentTime = new Date().toLocaleTimeString('id-ID')
-      setCheckInTime(currentTime)
-      console.log('Absen masuk berhasil! Anda hadir pada ' + currentTime)
-    }, 2000)
+    // Langsung buka kamera untuk selfie
+    setShowCheckInCamera(true)
+    startCamera()
   }
 
   const handleCheckOut = () => {
-    setIsCheckingOut(true)
-    // Simulate check-out process
-    setTimeout(() => {
-      setIsCheckingOut(false)
-      setTodayCheckedOut(true)
-      const currentTime = new Date().toLocaleTimeString('id-ID')
-      setCheckOutTime(currentTime)
-      console.log('Absen keluar berhasil! Anda pulang pada ' + currentTime)
-    }, 2000)
+    // Langsung buka kamera untuk selfie
+    setShowCheckOutCamera(true)
+    startCamera()
   }
 
   const getStatusColor = (status: string) => {
@@ -365,7 +457,7 @@ const AttendancePage: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <CheckCircle size={20} />
+                  <Camera size={20} />
                   Absen Masuk
                 </>
               )}
@@ -418,12 +510,92 @@ const AttendancePage: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <CheckCircle size={20} />
+                  <Camera size={20} />
                   Absen Keluar
                 </>
               )}
             </button>
           </div>
+
+          {/* Completed Photos Display - Only show after attendance is done */}
+          {(checkInPhoto || checkOutPhoto) && (
+            <div style={{
+              display: 'flex',
+              gap: '20px',
+              justifyContent: 'center',
+              marginTop: '30px',
+              paddingTop: '30px',
+              borderTop: '2px solid #f3f4f6'
+            }}>
+              {checkInPhoto && (
+                <div style={{
+                  textAlign: 'center'
+                }}>
+                  <h5 style={{
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: COLORS.primary,
+                    margin: '0 0 10px 0'
+                  }}>
+                    Foto Absen Masuk
+                  </h5>
+                  <img 
+                    src={checkInPhoto} 
+                    alt="Completed check-in selfie"
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      objectFit: 'cover',
+                      borderRadius: '10px',
+                      border: '2px solid #10b981'
+                    }}
+                  />
+                  <p style={{
+                    fontSize: '12px',
+                    color: '#10b981',
+                    margin: '8px 0 0 0',
+                    fontWeight: '500'
+                  }}>
+                    ✓ Tersimpan
+                  </p>
+                </div>
+              )}
+              
+              {checkOutPhoto && (
+                <div style={{
+                  textAlign: 'center'
+                }}>
+                  <h5 style={{
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: COLORS.primary,
+                    margin: '0 0 10px 0'
+                  }}>
+                    Foto Absen Keluar
+                  </h5>
+                  <img 
+                    src={checkOutPhoto} 
+                    alt="Completed check-out selfie"
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      objectFit: 'cover',
+                      borderRadius: '10px',
+                      border: '2px solid #10b981'
+                    }}
+                  />
+                  <p style={{
+                    fontSize: '12px',
+                    color: '#10b981',
+                    margin: '8px 0 0 0',
+                    fontWeight: '500'
+                  }}>
+                    ✓ Tersimpan
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Info Text */}
           <div style={{
@@ -434,10 +606,10 @@ const AttendancePage: React.FC = () => {
             fontStyle: 'italic'
           }}>
             {!todayCheckedIn ? 
-              'Lakukan absen masuk terlebih dahulu sebelum absen keluar' :
+              'Klik tombol "Absen Masuk" untuk mengambil foto selfie dan melakukan absensi' :
               !todayCheckedOut ?
-              'Jangan lupa absen keluar saat pulang sekolah' :
-              'Absensi hari ini telah lengkap. Terima kasih!'
+              'Klik tombol "Absen Keluar" untuk mengambil foto selfie dan melakukan absensi keluar' :
+              'Absensi hari ini telah lengkap dengan foto selfie. Terima kasih!'
             }
           </div>
         </motion.div>
@@ -547,6 +719,179 @@ const AttendancePage: React.FC = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Camera Modal */}
+      {(showCheckInCamera || showCheckOutCamera) && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: COLORS.white,
+            borderRadius: '20px',
+            padding: '30px',
+            maxWidth: '500px',
+            width: '90%',
+            textAlign: 'center',
+            position: 'relative'
+          }}>
+            <h3 style={{
+              fontSize: '24px',
+              fontWeight: '700',
+              color: COLORS.primary,
+              margin: '0 0 20px 0'
+            }}>
+              Ambil Foto Selfie
+            </h3>
+            
+            <p style={{
+              fontSize: '16px',
+              color: '#666',
+              margin: '0 0 20px 0'
+            }}>
+              Pastikan wajah Anda terlihat jelas dalam frame
+            </p>
+
+            <div style={{
+              position: 'relative',
+              marginBottom: '20px'
+            }}>
+              {tempPhoto ? (
+                // Tampilkan foto yang sudah diambil
+                <img
+                  src={tempPhoto}
+                  alt="Captured selfie"
+                  style={{
+                    width: '300px',
+                    height: '300px',
+                    objectFit: 'cover',
+                    borderRadius: '15px',
+                    border: '3px solid ' + COLORS.primary
+                  }}
+                />
+              ) : (
+                // Tampilkan live camera
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  style={{
+                    width: '300px',
+                    height: '300px',
+                    objectFit: 'cover',
+                    borderRadius: '15px',
+                    border: '3px solid ' + COLORS.primary
+                  }}
+                />
+              )}
+              <canvas
+                ref={canvasRef}
+                style={{ display: 'none' }}
+              />
+            </div>
+
+            <div style={{
+              display: 'flex',
+              gap: '15px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={cancelCamera}
+                style={{
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px 20px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <XCircle size={20} />
+                Batal
+              </button>
+              
+              {tempPhoto ? (
+                // Jika foto sudah diambil, tampilkan tombol Retake dan Submit
+                <>
+                  <button
+                    onClick={() => retakePhoto()}
+                    style={{
+                      background: COLORS.accent,
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      padding: '12px 20px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <RotateCcw size={20} />
+                    Ambil Ulang
+                  </button>
+                  
+                  <button
+                    onClick={submitAbsence}
+                    style={{
+                      background: `linear-gradient(45deg, #10b981, #059669)`,
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      padding: '12px 20px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <CheckCircle size={20} />
+                    Submit Absen
+                  </button>
+                </>
+              ) : (
+                // Jika belum ada foto, tampilkan tombol Ambil Foto
+                <button
+                  onClick={() => capturePhoto()}
+                  style={{
+                    background: `linear-gradient(45deg, ${COLORS.primary}, ${COLORS.accent})`,
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '12px 20px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <Camera size={20} />
+                  Ambil Foto
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CSS Animations */}
       <style>{`
