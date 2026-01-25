@@ -4,7 +4,6 @@ import {
   BookOpen, 
   Clock, 
   Calendar,
-  AlertTriangle,
   CheckCircle,
   ArrowLeft,
   Upload,
@@ -213,12 +212,6 @@ const AssignmentsPage: React.FC = () => {
               value: mockAssignments.filter(a => a.status === 'completed').length,
               icon: CheckCircle,
               color: '#10b981'
-            },
-            {
-              title: 'Mendesak',
-              value: mockAssignments.filter(a => a.status === 'urgent').length,
-              icon: AlertTriangle,
-              color: '#f59e0b'
             },
             {
               title: 'Terlambat',
