@@ -1,4 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
+// @ts-ignore
+import { DateRange } from 'react-date-range'
+import 'react-date-range/dist/styles.css'
+import 'react-date-range/dist/theme/default.css'
 import { motion } from 'framer-motion'
 import { absensiAPI } from '../services/api'
 import { 
@@ -37,6 +41,19 @@ const AttendancePage: React.FC = () => {
   const [checkOutTime, setCheckOutTime] = useState<string | null>(null)
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([])
   const [isLoadingRecords, setIsLoadingRecords] = useState(false)
+  // Calendar filter state
+  const [showCalendar, setShowCalendar] = useState(false)
+  // Default: 5 days back from today
+  const today = new Date()
+  const fiveDaysAgo = new Date()
+  fiveDaysAgo.setDate(today.getDate() - 5)
+  const [dateRange, setDateRange] = useState([
+    {
+      startDate: fiveDaysAgo,
+      endDate: today,
+      key: 'selection',
+    },
+  ])
   const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null)
   const [distanceToSchool, setDistanceToSchool] = useState<number | null>(null)
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'too-far' | 'error'>('checking')
@@ -338,31 +355,26 @@ const AttendancePage: React.FC = () => {
     })
   }
 
-  // Load attendance records function - defined outside useEffect so it can be called from other functions
-  const loadAttendanceRecords = async () => {
+  // Load attendance records with date range
+  const loadAttendanceRecords = async (start?: Date, end?: Date) => {
     try {
       setIsLoadingRecords(true)
       console.log('🔄 Loading attendance records...')
-      
-      // Get last 30 days of attendance records
-      const endDate = new Date()
-      const startDate = new Date()
-      startDate.setDate(startDate.getDate() - 30)
-      
+      const startDate = start || dateRange[0].startDate
+      let endDate = end || dateRange[0].endDate
+      // Set endDate to end of day to ensure inclusion
+      endDate = new Date(endDate)
+      endDate.setHours(23, 59, 59, 999)
       const response = await absensiAPI.getAttendanceHistory(
         startDate.toISOString().split('T')[0],
         endDate.toISOString().split('T')[0]
       )
-      
-      if (response.success && response.data) {
-        console.log('✅ Attendance records loaded:', response.data)
-        setAttendanceRecords(Array.isArray(response.data) ? response.data : [])
+      if (response.success && response.data && Array.isArray(response.data.riwayat)) {
+        setAttendanceRecords(response.data.riwayat)
       } else {
-        console.log('⚠️ No attendance records found:', response.message)
         setAttendanceRecords([])
       }
     } catch (error) {
-      console.error('❌ Error loading attendance records:', error)
       setAttendanceRecords([])
     } finally {
       setIsLoadingRecords(false)
@@ -373,46 +385,35 @@ const AttendancePage: React.FC = () => {
   useEffect(() => {
     const loadTodayAttendance = async () => {
       try {
-        console.log('🔄 Loading today\'s attendance status...')
         const response = await absensiAPI.getTodayAttendance()
         if (response.success && response.data) {
-          const attendance = response.data as any
-          console.log('✅ Today attendance loaded:', attendance)
-          
-          if (attendance.waktu_masuk) {
+          const todayData = response.data.absensi
+          if (todayData && todayData.jam_masuk) {
             setTodayCheckedIn(true)
-            setCheckInTime(new Date(attendance.waktu_masuk).toLocaleTimeString('id-ID', {
-              hour: '2-digit',
-              minute: '2-digit'
-            }))
+            setCheckInTime(todayData.jam_masuk)
+          } else {
+            setTodayCheckedIn(false)
+            setCheckInTime(null)
           }
-          if (attendance.waktu_pulang) {
+          if (todayData && todayData.jam_pulang) {
             setTodayCheckedOut(true)
-            setCheckOutTime(new Date(attendance.waktu_pulang).toLocaleTimeString('id-ID', {
-              hour: '2-digit',
-              minute: '2-digit'
-            }))
+            setCheckOutTime(todayData.jam_pulang)
+          } else {
+            setTodayCheckedOut(false)
+            setCheckOutTime(null)
           }
-        } else {
-          console.log('⚠️ No attendance data for today')
         }
-      } catch (error) {
-        console.error('❌ Error loading today attendance:', error)
-      }
+      } catch (error) {}
     }
-
     loadTodayAttendance()
     loadAttendanceRecords()
-    
-    // Check initial location for distance display
-    checkLocationAndDistance()
-      .then(result => {
-        console.log('✅ Initial location check:', result)
-      })
-      .catch(error => {
-        console.error('❌ Initial location check failed:', error)
-      })
+    checkLocationAndDistance().catch(() => {})
   }, [])
+
+  // Reload attendance records when dateRange changes
+  useEffect(() => {
+    loadAttendanceRecords()
+  }, [dateRange])
 
   const viewAttendanceDetail = async (absensiId: number) => {
     try {
@@ -991,15 +992,48 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
             boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
           }}
         >
-          <h3 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: COLORS.primary,
-            margin: '0 0 20px 0'
-          }}>
-            Riwayat Absensi
-          </h3>
-
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <h3 style={{
+              fontSize: '24px',
+              fontWeight: '700',
+              color: COLORS.primary,
+              margin: 0
+            }}>
+              Riwayat Absensi
+            </h3>
+            <button
+              onClick={() => setShowCalendar((v) => !v)}
+              style={{
+                background: COLORS.primary,
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                fontWeight: 600,
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+              }}
+            >
+              <Calendar size={18} />
+              Filter Tanggal
+            </button>
+          </div>
+          {showCalendar && (
+            <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'center' }}>
+              <DateRange
+                editableDateInputs={true}
+                onChange={(rangesByKey: any) => setDateRange([rangesByKey.selection])}
+                moveRangeOnFirstSelection={false}
+                ranges={dateRange}
+                maxDate={today}
+                locale={undefined}
+              />
+            </div>
+          )}
           <div style={{
             display: 'flex',
             flexDirection: 'column',
@@ -1017,11 +1051,9 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
               </div>
             ) : attendanceRecords.length > 0 ? (
               attendanceRecords.slice(0, 10).map((record, index) => {
-                // Convert backend data to display format
+                // ...existing code...
                 let status = 'unknown'
-                
                 if (record.status_kehadiran === 'hadir') {
-                  // Check if late based on terlambat field or time comparison
                   if (record.terlambat || (record.waktu_masuk && record.waktu_masuk > '07:30:00')) {
                     status = 'late'
                   } else {
@@ -1034,23 +1066,14 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
                 } else if (record.status_kehadiran === 'izin') {
                   status = 'permission'
                 }
-                
                 const StatusIcon = getStatusIcon(status)
                 const statusColor = getStatusColor(status)
-                
-                // Format times from backend
-                const timeIn = record.waktu_masuk ? 
-                  new Date(`2000-01-01T${record.waktu_masuk}`).toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  }) : '-'
-                
-                const timeOut = record.waktu_pulang ? 
-                  new Date(`2000-01-01T${record.waktu_pulang}`).toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  }) : '-'
-
+                const timeIn = record.jam_masuk
+                  ? record.jam_masuk
+                  : '-'
+                const timeOut = record.jam_pulang
+                  ? record.jam_pulang
+                  : '-'
                 return (
                   <div
                     key={record.id || index}
@@ -1075,7 +1098,6 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
                     }}>
                       <StatusIcon size={22} color={statusColor} />
                     </div>
-                    
                     <div style={{ flex: 1 }}>
                       <div style={{
                         display: 'flex',
@@ -1102,7 +1124,6 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
                           <span>Keluar: {timeOut}</span>
                         </div>
                       </div>
-                      
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -1134,8 +1155,6 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
                         )}
                       </div>
                     </div>
-                    
-                    {/* Detail Button */}
                     <button
                       onClick={() => viewAttendanceDetail(record.id)}
                       style={{
