@@ -160,11 +160,7 @@ const MultiLoginPage: React.FC = () => {
     setIsLoading(true)
     
     try {
-      // Call real API instead of dummy accounts
-      console.log('Calling login API with:', { email: formData.email })
-      
-      // Test dengan fetch langsung terlebih dahulu
-      console.log('Testing direct fetch to backend...')
+      // Call backend API
       const directResponse = await fetch('http://localhost:3000/api/auth/login', {
         method: 'POST',
         mode: 'cors',
@@ -179,19 +175,10 @@ const MultiLoginPage: React.FC = () => {
         })
       })
       
-      console.log('Direct fetch response:', {
-        status: directResponse.status,
-        ok: directResponse.ok,
-        statusText: directResponse.statusText
-      })
-      
       const directData = await directResponse.json()
-      console.log('Direct fetch data:', directData)
       
-      // Jika direct fetch berhasil, gunakan hasil tersebut
+      // Jika login berhasil
       if (directResponse.ok && directData.success) {
-        console.log('Direct fetch successful, using direct response')
-        
         // Store tokens and user info
         Cookies.set('accessToken', directData.data.token, { expires: 7 })
         localStorage.setItem('accessToken', directData.data.token)
@@ -199,24 +186,15 @@ const MultiLoginPage: React.FC = () => {
         localStorage.setItem('userEmail', formData.email)
         localStorage.setItem('userData', JSON.stringify(directData.data.user))
         
-        console.log('Login berhasil!', directData.message)
-        console.log('Stored in localStorage:', {
-          accessToken: localStorage.getItem('accessToken'),
-          userData: localStorage.getItem('userData'),
-          userType: localStorage.getItem('userType')
-        })
-        console.log('Redirecting to /home...')
-        
         // Navigate to homepage
         window.location.href = '/home'
         return
       } else {
-        throw new Error(directData.message || 'Direct API call failed')
+        throw new Error(directData.message || 'Login gagal')
       }
       
     } catch (error) {
       console.error('Login error:', error)
-      console.log('Login gagal. Periksa koneksi internet atau coba lagi.')
       alert('Login gagal: ' + (error instanceof Error ? error.message : 'Terjadi kesalahan'))
     } finally {
       setIsLoading(false)

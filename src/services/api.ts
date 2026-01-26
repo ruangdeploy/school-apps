@@ -30,15 +30,7 @@ class ApiService {
     }
 
     try {
-      console.log('Making API request:', { url, config: { ...config, headers: config.headers } })
       const response = await fetch(url, config)
-      console.log('Raw fetch response:', { 
-        status: response.status, 
-        statusText: response.statusText,
-        ok: response.ok,
-        url: response.url,
-        headers: Object.fromEntries(response.headers.entries())
-      })
       
       if (!response.ok) {
         // Try to get error message from response
@@ -49,8 +41,6 @@ class ApiService {
         } catch (e) {
           // If can't parse JSON, use status text
         }
-        
-        console.error('API Error:', errorMessage)
         
         // Handle specific error responses from backend
         if (response.status === 401) {
@@ -68,16 +58,12 @@ class ApiService {
       }
       
       const data = await response.json()
-      console.log('Parsed response data:', data)
 
-      const apiResponse = {
+      return {
         success: data.success || true,
         data: data.data || data,
         message: data.message || 'Success'
       }
-      console.log('Final API response:', apiResponse)
-      
-      return apiResponse
     } catch (error) {
       console.error('API request failed:', error)
       throw error
