@@ -1,101 +1,120 @@
-import { apiService } from './api'
+import { authAPI } from './api'
 import type { LoginCredentials, AuthResponse, ApiResponse, User } from '../types'
 
 class AuthService {
   async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
-    // Mock API response for development
-    if (import.meta.env.VITE_ENABLE_MOCK_API === 'true') {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          const mockUser: User = {
-            id: '1',
-            name: credentials.email.includes('student') ? 'John Student' : 'Jane Teacher',
-            email: credentials.email,
-            role: credentials.email.includes('student') ? 'student' : 'teacher',
-            studentId: credentials.email.includes('student') ? 'STU001' : undefined,
-            class: credentials.email.includes('student') ? 'Class 12A' : undefined,
-            grade: credentials.email.includes('student') ? '12' : undefined,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-
-          const mockAuthResponse: AuthResponse = {
-            user: mockUser,
-            accessToken: 'mock-access-token-12345',
-            refreshToken: 'mock-refresh-token-67890',
-            expiresIn: 3600
-          }
-
-          resolve({
-            success: true,
-            data: mockAuthResponse,
-            message: 'Login successful'
+    try {
+      const response = await authAPI.login(credentials)
+      
+      // Backend response structure based on authController.js
+      if (response.success && response.data) {
+        const responseData = response.data as any
+        const { user, token } = responseData
+        
+        // Store auth data
+        localStorage.setItem('accessToken', token)
+        localStorage.setItem('userType', user.tipe_user)
+        localStorage.setItem('userData', JSON.stringify(user))
+        
+        // Transform backend user data to frontend format
+        const frontendUser: User = {
+          id: user.id.toString(),
+          name: user.nama_lengkap,
+          email: user.email,
+          role: user.tipe_user, // siswa, guru, orang_tua, admin
+          phone: user.no_telepon,
+          avatar: user.foto_profil,
+          createdAt: user.created_at || new Date().toISOString(),
+          updatedAt: user.updated_at || new Date().toISOString(),
+          // Additional fields based on user type
+          ...(user.tipe_user === 'siswa' && user.siswa && {
+            studentId: user.siswa.nisn,
+            class: user.siswa.nama_kelas,
+            grade: user.siswa.tingkat?.toString()
+          }),
+          ...(user.tipe_user === 'guru' && user.guru && {
+            teacherId: user.guru.nip,
+            subjects: user.guru.mata_pelajaran
           })
-        }, 800) // Simulate network delay
-      })
+        }
+
+        const authResponse: AuthResponse = {
+          user: frontendUser,
+          accessToken: token,
+          refreshToken: token, // Backend might not have separate refresh token
+          expiresIn: 7 * 24 * 60 * 60 // 7 days in seconds
+        }
+
+        return {
+          success: true,
+          data: authResponse,
+          message: response.message || 'Login berhasil'
+        }
+      }
+      
+      throw new Error(response.message || 'Login gagal')
+    } catch (error) {
+      console.error('Login error:', error)
+      throw error
     }
-
-    // Real API call for production
-    const response = await apiService.post<AuthResponse>('/auth/login', credentials)
-    return response
-  }
-
-  async refreshToken(refreshToken: string): Promise<ApiResponse<AuthResponse>> {
-    // Mock API response for development
-    if (import.meta.env.VITE_ENABLE_MOCK_API === 'true') {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          const mockUser: User = {
-            id: '1',
-            name: 'Mock User',
-            email: 'user@school.com',
-            role: 'student',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-
-          const mockAuthResponse: AuthResponse = {
-            user: mockUser,
-            accessToken: 'new-mock-access-token-12345',
-            refreshToken: 'new-mock-refresh-token-67890',
-            expiresIn: 3600
-          }
-
-          resolve({
-            success: true,
-            data: mockAuthResponse,
-            message: 'Token refreshed'
-          })
-        }, 500)
-      })
-    }
-
-    // Real API call for production
-    const response = await apiService.post<AuthResponse>('/auth/refresh', {
-      refreshToken,
-    })
-    return response
   }
 
   async logout(): Promise<void> {
-    if (import.meta.env.VITE_ENABLE_MOCK_API !== 'true') {
-      await apiService.post('/auth/logout')
+    // Clear all auth data
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('userType')
+    localStorage.removeItem('userData')
+    
+    // Redirect to login
+    window.location.href = '/login'
+  }
+
+  getCurrentUser(): User | null {
+    try {
+      const userData = localStorage.getItem('userData')
+      if (userData) {
+        const user = JSON.parse(userData)
+        // Transform backend user to frontend format
+        return {
+          id: user.id?.toString() || user.user_id?.toString(),
+          name: user.nama_lengkap || user.name,
+          email: user.email,
+          role: user.tipe_user || user.role,
+          phone: user.no_telepon || user.phone,
+          avatar: user.foto_profil || user.avatar,
+          createdAt: user.created_at,
+          updatedAt: user.updated_at,
+          // Additional fields based on user type
+          ...(user.tipe_user === 'siswa' && user.siswa_data && {
+            studentId: user.siswa_data.nisn,
+            class: user.siswa_data.kelas_nama,
+            grade: user.siswa_data.tingkat?.toString()
+          }),
+          ...(user.tipe_user === 'guru' && user.guru_data && {
+            teacherId: user.guru_data.nip,
+            subjects: user.guru_data.mata_pelajaran
+          })
+        }
+      }
+      return null
+    } catch (error) {
+      console.error('Error getting current user:', error)
+      return null
     }
   }
 
-  async me(): Promise<any> {
-    if (import.meta.env.VITE_ENABLE_MOCK_API === 'true') {
-      return {
-        success: true,
-        data: {
-          id: '1',
-          name: 'Mock User',
-          email: 'user@school.com',
-          role: 'student'
-        }
-      }
-    }
-    return apiService.get('/auth/me')
+  isAuthenticated(): boolean {
+    const token = localStorage.getItem('accessToken')
+    const userData = localStorage.getItem('userData')
+    return !!(token && userData)
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('accessToken')
+  }
+
+  getUserType(): string | null {
+    return localStorage.getItem('userType')
   }
 }
 

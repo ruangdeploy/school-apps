@@ -1,4 +1,6 @@
 import React from 'react'
+import Cookies from 'js-cookie'
+import { authAPI } from '../services/api'
 import muridImage from '../assets/images/murid-removebg-preview.png'
 import guruImage from '../assets/images/guru-removebg-preview.png'
 import orangTuaImage from '../assets/images/orang_tua-removebg-preview.png'
@@ -17,11 +19,11 @@ const COLORS = {
   white: 'rgb(255, 255, 255)'
 }
 
-// Dummy accounts for easy login
+// Real accounts from API testing document
 const DUMMY_ACCOUNTS = {
-  siswa: { email: 'murid@sekolah.com', password: 'murid123' },
-  guru: { email: 'guru@sekolah.com', password: 'guru123' },
-  orangtua: { email: 'orangtua@sekolah.com', password: 'orangtua123' }
+  siswa: { email: 'andika.anggakusuma90@gmail.com', password: 'password123' },
+  guru: { email: 'anca.gimbal@gmail.com', password: 'password123' },
+  orangtua: { email: 'facebabybabyface@gmail.com', password: 'password123' }
 }
 
 const MultiLoginPage: React.FC = () => {
@@ -38,6 +40,15 @@ const MultiLoginPage: React.FC = () => {
     const handleResize = () => setWindowWidth(window.innerWidth)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Auto-fill credentials on component mount
+  React.useEffect(() => {
+    const account = DUMMY_ACCOUNTS['siswa']
+    setFormData({
+      email: account.email,
+      password: account.password
+    })
   }, [])
 
   const userTypeConfig = {
@@ -129,7 +140,17 @@ const MultiLoginPage: React.FC = () => {
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleUserTypeChange = (type: UserType) => {
+    setSelectedUserType(type)
+    // Auto-fill credentials for easier testing
+    const account = DUMMY_ACCOUNTS[type]
+    setFormData({
+      email: account.email,
+      password: account.password
+    })
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!formData.email || !formData.password) {
@@ -139,23 +160,35 @@ const MultiLoginPage: React.FC = () => {
     
     setIsLoading(true)
     
-    // Check dummy accounts
-    const account = DUMMY_ACCOUNTS[selectedUserType]
-    
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      // Call real API instead of dummy accounts
+      const response = await authAPI.login({
+        email: formData.email,
+        password: formData.password
+      })
       
-      if (formData.email === account.email && formData.password === account.password) {
-        // Store user type for profile page
+      if (response.success && response.data) {
+        // Store tokens and user info
+        const responseData = response.data as any
+        Cookies.set('accessToken', responseData.accessToken || responseData.token, { expires: 7 })
+        localStorage.setItem('accessToken', responseData.accessToken || responseData.token)
         localStorage.setItem('userType', selectedUserType)
         localStorage.setItem('userEmail', formData.email)
+        localStorage.setItem('userData', JSON.stringify(responseData.user))
+        
+        console.log('Login berhasil!', response.message)
+        
         // Navigate to homepage
         window.location.href = '/home'
       } else {
-        // Login failed - could show error message in UI instead of alert
-        console.log(`Login gagal! Gunakan akun berikut:\nEmail: ${account.email}\nPassword: ${account.password}`)
+        console.log('Login gagal:', response.message || 'Email atau password salah')
       }
-    }, 1500)
+    } catch (error) {
+      console.error('Login error:', error)
+      console.log('Login gagal. Periksa koneksi internet atau coba lagi.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const togglePasswordVisibility = () => {
@@ -325,7 +358,7 @@ const MultiLoginPage: React.FC = () => {
                 <button
                   key={type}
                   type="button"
-                  onClick={() => setSelectedUserType(type)}
+                  onClick={() => handleUserTypeChange(type)}
                   style={{
                     padding: '12px 20px',
                     border: selectedUserType === type 

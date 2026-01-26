@@ -74,30 +74,23 @@ export const useAuthStore = create<AuthState>()(
         })
       },
 
+      // Note: Backend doesn't have separate refresh token endpoint
+      // Token validation is done through getCurrentUser
       refreshToken: async () => {
         try {
-          const refreshToken = Cookies.get('refreshToken')
-          if (!refreshToken) {
-            throw new Error('No refresh token available')
+          const accessToken = Cookies.get('accessToken')
+          if (!accessToken) {
+            throw new Error('No access token available')
           }
 
-          const response = await authService.refreshToken(refreshToken)
-          if (!response.data) throw new Error('No data received from server')
+          // Validate current token by getting user data
+          const user = await authService.getCurrentUser()
+          if (!user) {
+            throw new Error('Token validation failed')
+          }
           
-          const { user, accessToken, refreshToken: newRefreshToken } = response.data
-          
-          Cookies.set('accessToken', accessToken, { 
-            expires: 7, 
-            secure: true, 
-            sameSite: 'strict' 
-          })
-          Cookies.set('refreshToken', newRefreshToken, { 
-            expires: 30, 
-            secure: true, 
-            sameSite: 'strict' 
-          })
-          
-          set({ user, isAuthenticated: true })
+          // If successful, token is still valid - no need to refresh
+          return
         } catch (error) {
           get().logout()
           throw error

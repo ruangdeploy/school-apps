@@ -1,5 +1,6 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { absensiAPI } from '../services/api'
 import { 
   Calendar, 
   Clock, 
@@ -102,40 +103,13 @@ const AttendancePage: React.FC = () => {
     startCamera()
   }
 
-  const submitAbsence = () => {
+  const submitAbsence = async () => {
     if (!tempPhoto) return
     
     if (showCheckInCamera) {
-      // Set foto terlebih dahulu, baru submit
-      setCheckInPhoto(tempPhoto)
-      setShowCheckInCamera(false)
-      setTempPhoto(null)
-      
-      // Submit check in langsung tanpa validasi foto (karena sudah ada)
-      setIsCheckingIn(true)
-      setTimeout(() => {
-        setIsCheckingIn(false)
-        setTodayCheckedIn(true)
-        const currentTime = new Date().toLocaleTimeString('id-ID')
-        setCheckInTime(currentTime)
-        console.log('Absen masuk berhasil! Anda hadir pada ' + currentTime)
-      }, 2000)
-      
+      await confirmCheckIn()
     } else if (showCheckOutCamera) {
-      // Set foto terlebih dahulu, baru submit
-      setCheckOutPhoto(tempPhoto)
-      setShowCheckOutCamera(false)
-      setTempPhoto(null)
-      
-      // Submit check out langsung tanpa validasi foto (karena sudah ada)
-      setIsCheckingOut(true)
-      setTimeout(() => {
-        setIsCheckingOut(false)
-        setTodayCheckedOut(true)
-        const currentTime = new Date().toLocaleTimeString('id-ID')
-        setCheckOutTime(currentTime)
-        console.log('Absen keluar berhasil! Anda pulang pada ' + currentTime)
-      }, 2000)
+      await confirmCheckOut()
     }
   }
 
@@ -157,6 +131,162 @@ const AttendancePage: React.FC = () => {
     setShowCheckOutCamera(true)
     startCamera()
   }
+
+  const confirmCheckIn = async () => {
+    if (!tempPhoto) return
+
+    setIsCheckingIn(true)
+    try {
+      // Get current location
+      const position = await getCurrentLocation()
+      
+      // Prepare form data for API
+      const formData = new FormData()
+      formData.append('latitude', position.latitude.toString())
+      formData.append('longitude', position.longitude.toString())
+      formData.append('status_kehadiran', 'hadir')
+      
+      // Convert base64 to blob and append to form data
+      const photoBlob = dataURLtoBlob(tempPhoto)
+      formData.append('foto_evidence_masuk', photoBlob, 'checkin_photo.jpg')
+      
+      // Call API
+      const response = await absensiAPI.checkIn(formData)
+      
+      if (response.success) {
+        setTodayCheckedIn(true)
+        setCheckInPhoto(tempPhoto)
+        setCheckInTime(new Date().toLocaleTimeString('id-ID', {
+          hour: '2-digit',
+          minute: '2-digit'
+        }))
+        
+        setShowCheckInCamera(false)
+        setTempPhoto(null)
+        
+        alert('Absensi masuk berhasil!')
+      } else {
+        throw new Error(response.message || 'Absensi gagal')
+      }
+    } catch (error) {
+      console.error('Check-in error:', error)
+      alert(error instanceof Error ? error.message : 'Absensi masuk gagal. Coba lagi.')
+    } finally {
+      setIsCheckingIn(false)
+    }
+  }
+
+  const confirmCheckOut = async () => {
+    if (!tempPhoto) return
+
+    setIsCheckingOut(true)
+    try {
+      // Get current location
+      const position = await getCurrentLocation()
+      
+      // Prepare form data for API
+      const formData = new FormData()
+      formData.append('latitude', position.latitude.toString())
+      formData.append('longitude', position.longitude.toString())
+      
+      // Convert base64 to blob and append to form data
+      const photoBlob = dataURLtoBlob(tempPhoto)
+      formData.append('foto_evidence_pulang', photoBlob, 'checkout_photo.jpg')
+      
+      // Call API
+      const response = await absensiAPI.checkOut(formData)
+      
+      if (response.success) {
+        setTodayCheckedOut(true)
+        setCheckOutPhoto(tempPhoto)
+        setCheckOutTime(new Date().toLocaleTimeString('id-ID', {
+          hour: '2-digit',
+          minute: '2-digit'
+        }))
+        
+        setShowCheckOutCamera(false)
+        setTempPhoto(null)
+        
+        alert('Absensi pulang berhasil!')
+      } else {
+        throw new Error(response.message || 'Absensi gagal')
+      }
+    } catch (error) {
+      console.error('Check-out error:', error)
+      alert(error instanceof Error ? error.message : 'Absensi pulang gagal. Coba lagi.')
+    } finally {
+      setIsCheckingOut(false)
+    }
+  }
+
+  // Helper functions
+  const getCurrentLocation = (): Promise<{latitude: number, longitude: number}> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation tidak didukung browser ini'))
+        return
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          })
+        },
+        (_error: GeolocationPositionError) => {
+          reject(new Error('Tidak dapat mengakses lokasi. Pastikan GPS aktif dan izin lokasi diberikan.'))
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        }
+      )
+    })
+  }
+
+  const dataURLtoBlob = (dataURL: string): Blob => {
+    const arr = dataURL.split(',')
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg'
+    const bstr = atob(arr[1])
+    let n = bstr.length
+    const u8arr = new Uint8Array(n)
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n)
+    }
+    return new Blob([u8arr], { type: mime })
+  }
+
+  // Load today's attendance status on component mount
+  useEffect(() => {
+    const loadTodayAttendance = async () => {
+      try {
+        const response = await absensiAPI.getTodayAttendance()
+        if (response.success && response.data) {
+          const attendance = response.data as any
+          if (attendance.waktu_masuk) {
+            setTodayCheckedIn(true)
+            setCheckInTime(new Date(attendance.waktu_masuk).toLocaleTimeString('id-ID', {
+              hour: '2-digit',
+              minute: '2-digit'
+            }))
+          }
+          if (attendance.waktu_pulang) {
+            setTodayCheckedOut(true)
+            setCheckOutTime(new Date(attendance.waktu_pulang).toLocaleTimeString('id-ID', {
+              hour: '2-digit',
+              minute: '2-digit'
+            }))
+          }
+        }
+      } catch (error) {
+        console.error('Error loading today attendance:', error)
+      }
+    }
+
+    loadTodayAttendance()
+  }, [])
 
   const getStatusColor = (status: string) => {
     switch (status) {
