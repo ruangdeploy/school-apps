@@ -1,15 +1,10 @@
 import React from 'react'
 import Cookies from 'js-cookie'
-import muridImage from '../assets/images/murid-removebg-preview.png'
-import guruImage from '../assets/images/guru-removebg-preview.png'
-import orangTuaImage from '../assets/images/orang_tua-removebg-preview.png'
 
 interface LoginForm {
   email: string
   password: string
 }
-
-type UserType = 'siswa' | 'guru' | 'orangtua'
 
 // Color palette constants
 const COLORS = {
@@ -18,118 +13,20 @@ const COLORS = {
   white: 'rgb(255, 255, 255)'
 }
 
-// Real accounts from API testing document
-const DUMMY_ACCOUNTS = {
+// Demo accounts for testing
+const DEMO_ACCOUNTS = {
   siswa: { email: 'andika.anggakusuma90@gmail.com', password: 'password123' },
   guru: { email: 'anca.gimbal@gmail.com', password: 'password123' },
   orangtua: { email: 'facebabybabyface@gmail.com', password: 'password123' }
 }
 
 const MultiLoginPage: React.FC = () => {
-  const [selectedUserType, setSelectedUserType] = React.useState<UserType>('siswa')
   const [formData, setFormData] = React.useState<LoginForm>({
     email: '',
     password: ''
   })
   const [showPassword, setShowPassword] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
-  const [windowWidth, setWindowWidth] = React.useState(window.innerWidth)
-
-  React.useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  // Auto-fill credentials on component mount
-  React.useEffect(() => {
-    const account = DUMMY_ACCOUNTS['siswa']
-    setFormData({
-      email: account.email,
-      password: account.password
-    })
-  }, [])
-
-  const userTypeConfig = {
-    siswa: {
-      title: 'Siswa',
-      subtitle: 'Masuk sebagai siswa',
-      color: COLORS.primary,
-      image: muridImage,
-      illustration: (
-        <div style={{
-          width: '220px',
-          height: '220px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative'
-        }}>
-          <img 
-            src={muridImage} 
-            alt="Siswa"
-            style={{
-              width: '210px',
-              height: '210px',
-              objectFit: 'contain'
-            }}
-          />
-        </div>
-      )
-    },
-    guru: {
-      title: 'Guru',
-      subtitle: 'Masuk sebagai guru',
-      color: COLORS.primary,
-      image: guruImage,
-      illustration: (
-        <div style={{
-          width: '220px',
-          height: '220px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative'
-        }}>
-          <img 
-            src={guruImage} 
-            alt="Guru"
-            style={{
-              width: '210px',
-              height: '210px',
-              objectFit: 'contain'
-            }}
-          />
-        </div>
-      )
-    },
-    orangtua: {
-      title: 'Orang Tua',
-      subtitle: 'Masuk sebagai orang tua',
-      color: COLORS.primary,
-      image: orangTuaImage,
-      illustration: (
-        <div style={{
-          width: '220px',
-          height: '220px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative'
-        }}>
-          <img 
-            src={orangTuaImage} 
-            alt="Orang Tua"
-            style={{
-              width: '210px',
-              height: '210px',
-              objectFit: 'contain'
-            }}
-          />
-        </div>
-      )
-    }
-  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -137,16 +34,6 @@ const MultiLoginPage: React.FC = () => {
       ...prev,
       [name]: value
     }))
-  }
-
-  const handleUserTypeChange = (type: UserType) => {
-    setSelectedUserType(type)
-    // Auto-fill credentials for easier testing
-    const account = DUMMY_ACCOUNTS[type]
-    setFormData({
-      email: account.email,
-      password: account.password
-    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -182,7 +69,6 @@ const MultiLoginPage: React.FC = () => {
         // Store tokens and user info
         Cookies.set('accessToken', directData.data.token, { expires: 7 })
         localStorage.setItem('accessToken', directData.data.token)
-        localStorage.setItem('userType', selectedUserType)
         localStorage.setItem('userEmail', formData.email)
         localStorage.setItem('userData', JSON.stringify(directData.data.user))
         
@@ -241,73 +127,16 @@ const MultiLoginPage: React.FC = () => {
 
       {/* Main Login Container */}
       <div style={{
-        maxWidth: '900px',
+        maxWidth: '500px',
         width: '100%',
         background: 'rgba(255, 255, 255, 0.95)',
         borderRadius: '20px',
         boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
         overflow: 'hidden',
-        display: windowWidth > 768 ? 'grid' : 'block',
-        gridTemplateColumns: windowWidth > 768 ? '1fr 1fr' : '1fr',
         minHeight: '600px'
       }}>
         
-        {/* Left Side - Illustration */}
-        {windowWidth > 768 && (
-        <div style={{
-          background: `linear-gradient(45deg, ${COLORS.primary}, ${COLORS.accent})`,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          padding: '40px',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {/* Background Pattern */}
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage: `radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 1px, transparent 1px)`,
-            backgroundSize: '30px 30px'
-          }}></div>
-          
-          <div style={{
-            fontSize: '120px',
-            marginBottom: '20px',
-            animation: 'float 3s ease-in-out infinite',
-            zIndex: 1,
-            color: 'rgba(255, 255, 255, 0.9)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            {userTypeConfig[selectedUserType].illustration}
-          </div>
-          
-          <h2 style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            marginBottom: '10px',
-            textAlign: 'center',
-            zIndex: 1
-          }}>
-            {userTypeConfig[selectedUserType].title}
-          </h2>
-          
-          <p style={{
-            fontSize: '16px',
-            opacity: 0.9,
-            textAlign: 'center',
-            zIndex: 1
-          }}>
-            {userTypeConfig[selectedUserType].subtitle}
-          </p>
-        </div>
-        )}
-
-        {/* Right Side - Login Form */}
+        {/* Login Form */}
         <div style={{
           padding: '40px',
           display: 'flex',
@@ -347,51 +176,6 @@ const MultiLoginPage: React.FC = () => {
             }}>
               LoginPage
             </h1>
-          </div>
-
-          {/* User Type Selection */}
-          <div style={{ marginBottom: '30px' }}>
-            <h3 style={{
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '15px'
-            }}>
-              Pilih Tipe Pengguna
-            </h3>
-            <div style={{
-              display: 'flex',
-              gap: '10px',
-              flexWrap: 'wrap'
-            }}>
-              {(Object.keys(userTypeConfig) as UserType[]).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => handleUserTypeChange(type)}
-                  style={{
-                    padding: '12px 20px',
-                    border: selectedUserType === type 
-                      ? `2px solid ${COLORS.primary}`
-                      : '2px solid #e5e7eb',
-                    borderRadius: '10px',
-                    background: selectedUserType === type 
-                      ? `${COLORS.primary}15`
-                      : 'white',
-                    color: selectedUserType === type 
-                      ? COLORS.primary
-                      : '#6b7280',
-                    fontWeight: selectedUserType === type ? '600' : '500',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    flex: 1,
-                    minWidth: '100px'
-                  }}
-                >
-                  {userTypeConfig[type].title}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Login Form */}
@@ -584,7 +368,7 @@ const MultiLoginPage: React.FC = () => {
                   Memproses...
                 </div>
               ) : (
-                `Masuk sebagai ${userTypeConfig[selectedUserType].title}`
+                `Masuk ke Sistem`
               )}
             </button>
 
@@ -609,7 +393,7 @@ const MultiLoginPage: React.FC = () => {
               </a>
             </div>
 
-            {/* Dummy Account Info */}
+            {/* Demo Account Info */}
             <div style={{
               background: `${COLORS.accent}20`,
               padding: '15px',
@@ -622,16 +406,35 @@ const MultiLoginPage: React.FC = () => {
                 color: COLORS.primary,
                 fontWeight: '600'
               }}>
-                Akun Demo - {userTypeConfig[selectedUserType].title}
+                Akun Demo - Untuk Testing
               </h4>
-              <p style={{
-                margin: '0',
-                fontSize: '13px',
-                color: '#666',
-                lineHeight: '1.4'
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: '10px',
+                fontSize: '12px',
+                color: '#666'
               }}>
-                <strong>Email:</strong> {DUMMY_ACCOUNTS[selectedUserType].email}<br/>
-                <strong>Password:</strong> {DUMMY_ACCOUNTS[selectedUserType].password}
+                <div>
+                  <strong>Siswa:</strong><br/>
+                  {DEMO_ACCOUNTS.siswa.email}
+                </div>
+                <div>
+                  <strong>Guru:</strong><br/>
+                  {DEMO_ACCOUNTS.guru.email}
+                </div>
+                <div>
+                  <strong>Orang Tua:</strong><br/>
+                  {DEMO_ACCOUNTS.orangtua.email}
+                </div>
+              </div>
+              <p style={{
+                margin: '8px 0 0 0',
+                fontSize: '11px',
+                color: '#888',
+                fontStyle: 'italic'
+              }}>
+                Password untuk semua akun: password123
               </p>
             </div>
           </form>

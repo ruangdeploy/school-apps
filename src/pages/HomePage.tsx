@@ -74,8 +74,11 @@ const HomePage: React.FC = () => {
       if (response.ok) {
         const result = await response.json()
         if (result.success) {
+          console.log('Today attendance data received:', result.data)
           setTodayAttendance(result.data)
         }
+      } else {
+        console.error('Failed to load attendance:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Error loading today attendance:', error)
@@ -141,6 +144,61 @@ const HomePage: React.FC = () => {
       month: 'long',
       day: 'numeric'
     })
+  }
+
+  // Helper function to safely format datetime from backend
+  const formatDateTime = (dateTimeString: any) => {
+    if (!dateTimeString) return 'Belum tercatat'
+    
+    try {
+      console.log('Formatting datetime:', dateTimeString, 'Type:', typeof dateTimeString)
+      
+      // Handle different date formats from backend
+      let date: Date
+      
+      // If it's already a Date object
+      if (dateTimeString instanceof Date) {
+        date = dateTimeString
+      }
+      // If it's a timestamp number
+      else if (typeof dateTimeString === 'number') {
+        date = new Date(dateTimeString)
+      }
+      // If it's a string
+      else if (typeof dateTimeString === 'string') {
+        if (dateTimeString.includes('T')) {
+          // ISO format: 2026-01-26T07:30:00.000Z
+          date = new Date(dateTimeString)
+        } else if (dateTimeString.includes('-') && dateTimeString.includes(':')) {
+          // MySQL datetime format: 2026-01-26 07:30:00
+          date = new Date(dateTimeString.replace(' ', 'T'))
+        } else if (dateTimeString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          // Date only format: 2026-01-26
+          date = new Date(dateTimeString + 'T00:00:00')
+        } else {
+          // Try parsing as is
+          date = new Date(dateTimeString)
+        }
+      } else {
+        // Unknown format
+        console.warn('Unknown date format:', dateTimeString, typeof dateTimeString)
+        return 'Format tidak dikenal'
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date created from:', dateTimeString)
+        return 'Format tanggal tidak valid'
+      }
+      
+      return date.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    } catch (error) {
+      console.error('Error formatting date:', error, 'Input:', dateTimeString)
+      return 'Error format tanggal'
+    }
   }
 
   return (
@@ -379,17 +437,11 @@ const HomePage: React.FC = () => {
           {todayAttendance ? (
             <div>
               <p style={{ margin: '10px 0', fontSize: '16px' }}>
-                ✅ Sudah absen masuk: {new Date(todayAttendance.waktu_masuk).toLocaleTimeString('id-ID', {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
+                ✅ Sudah absen masuk: {formatDateTime(todayAttendance.waktu_masuk)}
               </p>
               {todayAttendance.waktu_pulang && (
                 <p style={{ margin: '10px 0', fontSize: '16px' }}>
-                  ✅ Sudah absen pulang: {new Date(todayAttendance.waktu_pulang).toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  ✅ Sudah absen pulang: {formatDateTime(todayAttendance.waktu_pulang)}
                 </p>
               )}
               {!todayAttendance.waktu_pulang && (
