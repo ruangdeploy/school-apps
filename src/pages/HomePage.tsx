@@ -27,6 +27,21 @@ const HomePage: React.FC = () => {
     window.location.href = '/login'
   }
 
+  const testLogin = async () => {
+    try {
+      const { authAPI } = await import('../services/api')
+      const response = await authAPI.login({
+        email: 'andika.anggakusuma90@gmail.com',
+        password: 'password123'
+      })
+      console.log('Test login response:', response)
+      alert('Test login result: ' + JSON.stringify(response, null, 2))
+    } catch (error) {
+      console.error('Test login error:', error)
+      alert('Test login error: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Header */}
@@ -44,19 +59,34 @@ const HomePage: React.FC = () => {
             Selamat datang, {user?.nama_lengkap || 'User'}
           </p>
         </div>
-        <button
-          onClick={handleLogout}
-          style={{
-            background: 'rgba(255,255,255,0.2)',
-            border: 'none',
-            color: COLORS.white,
-            padding: '0.5rem 1rem',
-            borderRadius: '0.5rem',
-            cursor: 'pointer'
-          }}
-        >
-          Logout
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={testLogin}
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              color: COLORS.white,
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              cursor: 'pointer'
+            }}
+          >
+            Test Login
+          </button>
+          <button
+            onClick={handleLogout}
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              color: COLORS.white,
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              cursor: 'pointer'
+            }}
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       {/* Content */}

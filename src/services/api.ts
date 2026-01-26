@@ -18,8 +18,11 @@ class ApiService {
     const accessToken = localStorage.getItem('accessToken') || Cookies.get('accessToken')
 
     const config: RequestInit = {
+      mode: 'cors', // Explicitly set CORS mode
+      credentials: 'omit', // Don't send cookies for now
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         ...options.headers,
       },
@@ -27,10 +30,28 @@ class ApiService {
     }
 
     try {
+      console.log('Making API request:', { url, config: { ...config, headers: config.headers } })
       const response = await fetch(url, config)
-      const data = await response.json()
-
+      console.log('Raw fetch response:', { 
+        status: response.status, 
+        statusText: response.statusText,
+        ok: response.ok,
+        url: response.url,
+        headers: Object.fromEntries(response.headers.entries())
+      })
+      
       if (!response.ok) {
+        // Try to get error message from response
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorMessage
+        } catch (e) {
+          // If can't parse JSON, use status text
+        }
+        
+        console.error('API Error:', errorMessage)
+        
         // Handle specific error responses from backend
         if (response.status === 401) {
           // Token expired or invalid, clear auth data
@@ -38,16 +59,25 @@ class ApiService {
           localStorage.removeItem('userType')
           localStorage.removeItem('userData')
           Cookies.remove('accessToken')
-          window.location.href = '/login'
+          // Don't redirect on login page
+          if (!window.location.pathname.includes('login')) {
+            window.location.href = '/login'
+          }
         }
-        throw new Error(data.message || `HTTP error! status: ${response.status}`)
+        throw new Error(errorMessage)
       }
+      
+      const data = await response.json()
+      console.log('Parsed response data:', data)
 
-      return {
+      const apiResponse = {
         success: data.success || true,
         data: data.data || data,
         message: data.message || 'Success'
       }
+      console.log('Final API response:', apiResponse)
+      
+      return apiResponse
     } catch (error) {
       console.error('API request failed:', error)
       throw error

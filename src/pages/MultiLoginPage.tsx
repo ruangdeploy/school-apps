@@ -1,6 +1,5 @@
 import React from 'react'
 import Cookies from 'js-cookie'
-import { authAPI } from '../services/api'
 import muridImage from '../assets/images/murid-removebg-preview.png'
 import guruImage from '../assets/images/guru-removebg-preview.png'
 import orangTuaImage from '../assets/images/orang_tua-removebg-preview.png'
@@ -162,30 +161,63 @@ const MultiLoginPage: React.FC = () => {
     
     try {
       // Call real API instead of dummy accounts
-      const response = await authAPI.login({
-        email: formData.email,
-        password: formData.password
+      console.log('Calling login API with:', { email: formData.email })
+      
+      // Test dengan fetch langsung terlebih dahulu
+      console.log('Testing direct fetch to backend...')
+      const directResponse = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
       })
       
-      if (response.success && response.data) {
+      console.log('Direct fetch response:', {
+        status: directResponse.status,
+        ok: directResponse.ok,
+        statusText: directResponse.statusText
+      })
+      
+      const directData = await directResponse.json()
+      console.log('Direct fetch data:', directData)
+      
+      // Jika direct fetch berhasil, gunakan hasil tersebut
+      if (directResponse.ok && directData.success) {
+        console.log('Direct fetch successful, using direct response')
+        
         // Store tokens and user info
-        const responseData = response.data as any
-        Cookies.set('accessToken', responseData.accessToken || responseData.token, { expires: 7 })
-        localStorage.setItem('accessToken', responseData.accessToken || responseData.token)
+        Cookies.set('accessToken', directData.data.token, { expires: 7 })
+        localStorage.setItem('accessToken', directData.data.token)
         localStorage.setItem('userType', selectedUserType)
         localStorage.setItem('userEmail', formData.email)
-        localStorage.setItem('userData', JSON.stringify(responseData.user))
+        localStorage.setItem('userData', JSON.stringify(directData.data.user))
         
-        console.log('Login berhasil!', response.message)
+        console.log('Login berhasil!', directData.message)
+        console.log('Stored in localStorage:', {
+          accessToken: localStorage.getItem('accessToken'),
+          userData: localStorage.getItem('userData'),
+          userType: localStorage.getItem('userType')
+        })
+        console.log('Redirecting to /home...')
         
         // Navigate to homepage
         window.location.href = '/home'
+        return
       } else {
-        console.log('Login gagal:', response.message || 'Email atau password salah')
+        throw new Error(directData.message || 'Direct API call failed')
       }
+      
     } catch (error) {
       console.error('Login error:', error)
       console.log('Login gagal. Periksa koneksi internet atau coba lagi.')
+      alert('Login gagal: ' + (error instanceof Error ? error.message : 'Terjadi kesalahan'))
     } finally {
       setIsLoading(false)
     }

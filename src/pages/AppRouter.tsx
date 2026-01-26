@@ -8,6 +8,7 @@ import AssignmentsPage from './AssignmentsPage'
 import GradesPage from './GradesPage'
 import ProfilePage from './ProfilePage'
 import TestBackendPage from './TestBackendPage'
+import DebugLoginPage from './DebugLoginPage'
 
 const AppRouter: React.FC = () => {
   return (
@@ -21,6 +22,7 @@ const AppRouter: React.FC = () => {
         <Route path="/grades" element={<GradesPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/test-backend" element={<TestBackendPage />} />
+        <Route path="/debug-login" element={<DebugLoginPage />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
