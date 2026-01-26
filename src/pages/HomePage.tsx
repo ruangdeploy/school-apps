@@ -14,6 +14,7 @@ import {
   Eye,
   CalendarDays
 } from 'lucide-react'
+import { apiService } from '../services/api'
 
 // Color palette constants - same as login page
 const COLORS = {
@@ -61,66 +62,86 @@ const HomePage: React.FC = () => {
 
   const loadTodayAttendance = async () => {
     try {
-      const token = localStorage.getItem('accessToken')
-      if (!token) return
-
-      const response = await fetch('http://localhost:3000/api/absensi/hari-ini', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success) {
-          console.log('Today attendance data received:', result.data)
-          setTodayAttendance(result.data)
-        }
+      console.log('🔄 Loading today\'s attendance...')
+      const response = await apiService.absensiAPI.getTodayAttendance()
+      
+      if (response.success && response.data) {
+        console.log('✅ Today attendance loaded successfully:', response.data)
+        setTodayAttendance(response.data)
       } else {
-        console.error('Failed to load attendance:', response.status, response.statusText)
+        console.log('⚠️ No attendance data for today:', response.message)
+        setTodayAttendance(null)
       }
     } catch (error) {
-      console.error('Error loading today attendance:', error)
+      console.error('❌ Error loading today attendance:', error)
+      setTodayAttendance(null)
     }
   }
 
   const loadAttendanceStats = async () => {
     try {
-      const token = localStorage.getItem('accessToken')
-      if (!token) return
-
+      console.log('🔄 Loading attendance statistics...')
+      
       // Get current month stats
       const now = new Date()
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
       const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
 
-      const response = await fetch(`http://localhost:3000/api/absensi/riwayat?tanggal_awal=${firstDay.toISOString().split('T')[0]}&tanggal_akhir=${lastDay.toISOString().split('T')[0]}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await apiService.absensiAPI.getAttendanceHistory({
+        tanggal_awal: firstDay.toISOString().split('T')[0],
+        tanggal_akhir: lastDay.toISOString().split('T')[0]
       })
-
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          const attendance = result.data
-          const totalDays = attendance.length
-          const hadir = attendance.filter((a: any) => a.status_kehadiran === 'hadir').length
-          const terlambat = attendance.filter((a: any) => a.status_kehadiran === 'terlambat').length
-          const alpha = totalDays - hadir - terlambat
-
-          setStats({
-            totalHadir: hadir,
-            totalTerlambat: terlambat,
-            totalAlpha: alpha,
-            persentaseKehadiran: totalDays > 0 ? Math.round((hadir / totalDays) * 100) : 0
+      
+      if (response.success && response.data) {
+        console.log('✅ Attendance history loaded successfully:', response.data)
+        
+        // Calculate stats from attendance history
+        let totalHadir = 0
+        let totalTerlambat = 0
+        let totalAlpha = 0
+        
+        if (Array.isArray(response.data)) {
+          response.data.forEach((record: any) => {
+            if (record.status_kehadiran === 'hadir') {
+              totalHadir++
+              if (record.terlambat || (record.waktu_masuk && record.waktu_masuk > '07:30:00')) {
+                totalTerlambat++
+              }
+            } else if (record.status_kehadiran === 'alpha' || !record.waktu_masuk) {
+              totalAlpha++
+            }
           })
         }
+        
+        const totalDays = totalHadir + totalAlpha
+        const persentaseKehadiran = totalDays > 0 ? Math.round((totalHadir / totalDays) * 100) : 0
+        
+        const calculatedStats = {
+          totalHadir,
+          totalTerlambat,
+          totalAlpha,
+          persentaseKehadiran
+        }
+        
+        console.log('📊 Calculated stats:', calculatedStats)
+        setStats(calculatedStats)
+      } else {
+        console.log('⚠️ No attendance history data:', response.message)
+        setStats({
+          totalHadir: 0,
+          totalTerlambat: 0,
+          totalAlpha: 0,
+          persentaseKehadiran: 0
+        })
       }
     } catch (error) {
-      console.error('Error loading attendance stats:', error)
+      console.error('❌ Error loading attendance stats:', error)
+      setStats({
+        totalHadir: 0,
+        totalTerlambat: 0,
+        totalAlpha: 0,
+        persentaseKehadiran: 0
+      })
     }
   }
 

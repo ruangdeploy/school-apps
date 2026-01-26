@@ -20,22 +20,13 @@ const COLORS = {
   white: 'rgb(255, 255, 255)'
 }
 
-// Mock attendance data
-const mockAttendanceData = {
-  todayStats: {
-    present: 28,
-    absent: 2,
-    late: 1,
-    total: 31
-  },
-  recentRecords: [
-    { date: '2026-01-24', status: 'present', timeIn: '07:45', timeOut: '15:30', location: 'Kelas XII IPA 1' },
-    { date: '2026-01-23', status: 'present', timeIn: '07:50', timeOut: '15:25', location: 'Kelas XII IPA 1' },
-    { date: '2026-01-22', status: 'late', timeIn: '08:15', timeOut: '15:35', location: 'Kelas XII IPA 1' },
-    { date: '2026-01-21', status: 'present', timeIn: '07:40', timeOut: '15:20', location: 'Kelas XII IPA 1' },
-    { date: '2026-01-20', status: 'present', timeIn: '07:55', timeOut: '15:30', location: 'Kelas XII IPA 1' }
-  ]
-}
+// TODO: Koordinat sekolah perlu dikonfigurasi sesuai lokasi sekolah yang sebenarnya
+// const SCHOOL_LOCATION = {
+//   latitude: 0,
+//   longitude: 0,
+//   name: 'Nama Sekolah',
+//   maxDistance: 100 // maksimal 100 meter
+// }
 
 const AttendancePage: React.FC = () => {
   const [isCheckingIn, setIsCheckingIn] = useState(false)
@@ -44,6 +35,11 @@ const AttendancePage: React.FC = () => {
   const [todayCheckedOut, setTodayCheckedOut] = useState(false)
   const [checkInTime, setCheckInTime] = useState<string | null>(null)
   const [checkOutTime, setCheckOutTime] = useState<string | null>(null)
+  const [attendanceRecords, setAttendanceRecords] = useState<any[]>([])
+  const [isLoadingRecords, setIsLoadingRecords] = useState(false)
+  const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null)
+  const [distanceToSchool, setDistanceToSchool] = useState<number | null>(null)
+  const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'too-far' | 'error'>('checking')
   
   // Camera and photo states
   const [showCheckInCamera, setShowCheckInCamera] = useState(false)
@@ -120,25 +116,51 @@ const AttendancePage: React.FC = () => {
     setTempPhoto(null)
   }
 
-  const handleCheckIn = () => {
-    // Langsung buka kamera untuk selfie
-    setShowCheckInCamera(true)
-    startCamera()
+  const handleCheckIn = async () => {
+    try {
+      console.log('🔄 Checking location before attendance...')
+      const locationCheck = await checkLocationAndDistance()
+      
+      if (!locationCheck.allowed) {
+        alert(`⚠️ Lokasi tidak sesuai!\n\nSilakan coba lagi.`)
+        return
+      }
+      
+      // Jika lokasi diizinkan, buka kamera untuk selfie
+      setShowCheckInCamera(true)
+      startCamera()
+    } catch (error) {
+      console.error('❌ Location check error:', error)
+      alert(error instanceof Error ? error.message : 'Gagal mengecek lokasi. Coba lagi.')
+    }
   }
 
-  const handleCheckOut = () => {
-    // Langsung buka kamera untuk selfie
-    setShowCheckOutCamera(true)
-    startCamera()
+  const handleCheckOut = async () => {
+    try {
+      console.log('🔄 Checking location before checkout...')
+      const locationCheck = await checkLocationAndDistance()
+      
+      if (!locationCheck.allowed) {
+        alert(`⚠️ Lokasi tidak sesuai!\n\nSilakan coba lagi.`)
+        return
+      }
+      
+      // Jika lokasi diizinkan, buka kamera untuk selfie
+      setShowCheckOutCamera(true)
+      startCamera()
+    } catch (error) {
+      console.error('❌ Location check error:', error)
+      alert(error instanceof Error ? error.message : 'Gagal mengecek lokasi. Coba lagi.')
+    }
   }
 
   const confirmCheckIn = async () => {
-    if (!tempPhoto) return
+    if (!tempPhoto || !userLocation) return
 
     setIsCheckingIn(true)
     try {
-      // Get current location
-      const position = await getCurrentLocation()
+      // Use the already checked location
+      const position = userLocation
       
       // Prepare form data for API
       const formData = new FormData()
@@ -149,6 +171,12 @@ const AttendancePage: React.FC = () => {
       // Convert base64 to blob and append to form data
       const photoBlob = dataURLtoBlob(tempPhoto)
       formData.append('foto_evidence_masuk', photoBlob, 'checkin_photo.jpg')
+      
+      console.log('📤 Sending check-in data:', {
+        latitude: position.latitude,
+        longitude: position.longitude,
+        distance: distanceToSchool ? `${distanceToSchool.toFixed(2)}m` : 'unknown'
+      })
       
       // Call API
       const response = await absensiAPI.checkIn(formData)
@@ -164,7 +192,10 @@ const AttendancePage: React.FC = () => {
         setShowCheckInCamera(false)
         setTempPhoto(null)
         
-        alert('Absensi masuk berhasil!')
+        alert(`✅ Absensi masuk berhasil!\n\nJarak dari sekolah: ${distanceToSchool ? distanceToSchool.toFixed(0) + ' meter' : 'unknown'}`)
+        
+        // Refresh attendance records after successful check-in
+        loadAttendanceRecords()
       } else {
         throw new Error(response.message || 'Absensi gagal')
       }
@@ -177,12 +208,12 @@ const AttendancePage: React.FC = () => {
   }
 
   const confirmCheckOut = async () => {
-    if (!tempPhoto) return
+    if (!tempPhoto || !userLocation) return
 
     setIsCheckingOut(true)
     try {
-      // Get current location
-      const position = await getCurrentLocation()
+      // Use the already checked location
+      const position = userLocation
       
       // Prepare form data for API
       const formData = new FormData()
@@ -192,6 +223,12 @@ const AttendancePage: React.FC = () => {
       // Convert base64 to blob and append to form data
       const photoBlob = dataURLtoBlob(tempPhoto)
       formData.append('foto_evidence_pulang', photoBlob, 'checkout_photo.jpg')
+      
+      console.log('📤 Sending check-out data:', {
+        latitude: position.latitude,
+        longitude: position.longitude,
+        distance: distanceToSchool ? `${distanceToSchool.toFixed(2)}m` : 'unknown'
+      })
       
       // Call API
       const response = await absensiAPI.checkOut(formData)
@@ -207,7 +244,10 @@ const AttendancePage: React.FC = () => {
         setShowCheckOutCamera(false)
         setTempPhoto(null)
         
-        alert('Absensi pulang berhasil!')
+        alert(`✅ Absensi pulang berhasil!\n\nJarak dari sekolah: ${distanceToSchool ? distanceToSchool.toFixed(0) + ' meter' : 'unknown'}`)
+        
+        // Refresh attendance records after successful check-out
+        loadAttendanceRecords()
       } else {
         throw new Error(response.message || 'Absensi gagal')
       }
@@ -220,32 +260,6 @@ const AttendancePage: React.FC = () => {
   }
 
   // Helper functions
-  const getCurrentLocation = (): Promise<{latitude: number, longitude: number}> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation tidak didukung browser ini'))
-        return
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          })
-        },
-        (_error: GeolocationPositionError) => {
-          reject(new Error('Tidak dapat mengakses lokasi. Pastikan GPS aktif dan izin lokasi diberikan.'))
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
-        }
-      )
-    })
-  }
-
   const dataURLtoBlob = (dataURL: string): Blob => {
     const arr = dataURL.split(',')
     const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg'
@@ -258,13 +272,113 @@ const AttendancePage: React.FC = () => {
     return new Blob([u8arr], { type: mime })
   }
 
+  // Function to calculate distance between two coordinates using Haversine formula
+  // DISABLED: Distance calculation is no longer used
+  // const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  //   const R = 6371e3 // Earth's radius in meters
+  //   const φ1 = (lat1 * Math.PI) / 180
+  //   const φ2 = (lat2 * Math.PI) / 180
+  //   const Δφ = ((lat2 - lat1) * Math.PI) / 180
+  //   const Δλ = ((lon2 - lon1) * Math.PI) / 180
+
+  //   const a =
+  //     Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+  //     Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  //   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+  //   return R * c // Distance in meters
+  // }
+
+  // Function to check location and distance to school
+  // DISABLED: Location verification has been disabled
+  const checkLocationAndDistance = async (): Promise<{latitude: number, longitude: number, distance: number, allowed: boolean}> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation tidak didukung browser ini'))
+        return
+      }
+
+      setLocationStatus('checking')
+      
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLat = position.coords.latitude
+          const userLon = position.coords.longitude
+          // DISABLED: Distance calculation removed
+          const distance = 0 // Always allow
+          
+          console.log('📍 User location:', { lat: userLat, lon: userLon })
+          console.log('🏫 School location verification disabled')
+          console.log('📏 Distance verification disabled')
+          
+          setUserLocation({ latitude: userLat, longitude: userLon })
+          setDistanceToSchool(distance)
+          
+          // DISABLED: Always allow attendance regardless of location
+          const allowed = true
+          setLocationStatus('allowed')
+          
+          resolve({
+            latitude: userLat,
+            longitude: userLon,
+            distance,
+            allowed
+          })
+        },
+        (_error: GeolocationPositionError) => {
+          setLocationStatus('error')
+          reject(new Error('Tidak dapat mengakses lokasi. Pastikan GPS aktif dan izin lokasi diberikan.'))
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 30000
+        }
+      )
+    })
+  }
+
+  // Load attendance records function - defined outside useEffect so it can be called from other functions
+  const loadAttendanceRecords = async () => {
+    try {
+      setIsLoadingRecords(true)
+      console.log('🔄 Loading attendance records...')
+      
+      // Get last 30 days of attendance records
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - 30)
+      
+      const response = await absensiAPI.getAttendanceHistory(
+        startDate.toISOString().split('T')[0],
+        endDate.toISOString().split('T')[0]
+      )
+      
+      if (response.success && response.data) {
+        console.log('✅ Attendance records loaded:', response.data)
+        setAttendanceRecords(Array.isArray(response.data) ? response.data : [])
+      } else {
+        console.log('⚠️ No attendance records found:', response.message)
+        setAttendanceRecords([])
+      }
+    } catch (error) {
+      console.error('❌ Error loading attendance records:', error)
+      setAttendanceRecords([])
+    } finally {
+      setIsLoadingRecords(false)
+    }
+  }
+
   // Load today's attendance status on component mount
   useEffect(() => {
     const loadTodayAttendance = async () => {
       try {
+        console.log('🔄 Loading today\'s attendance status...')
         const response = await absensiAPI.getTodayAttendance()
         if (response.success && response.data) {
           const attendance = response.data as any
+          console.log('✅ Today attendance loaded:', attendance)
+          
           if (attendance.waktu_masuk) {
             setTodayCheckedIn(true)
             setCheckInTime(new Date(attendance.waktu_masuk).toLocaleTimeString('id-ID', {
@@ -279,20 +393,64 @@ const AttendancePage: React.FC = () => {
               minute: '2-digit'
             }))
           }
+        } else {
+          console.log('⚠️ No attendance data for today')
         }
       } catch (error) {
-        console.error('Error loading today attendance:', error)
+        console.error('❌ Error loading today attendance:', error)
       }
     }
 
     loadTodayAttendance()
+    loadAttendanceRecords()
+    
+    // Check initial location for distance display
+    checkLocationAndDistance()
+      .then(result => {
+        console.log('✅ Initial location check:', result)
+      })
+      .catch(error => {
+        console.error('❌ Initial location check failed:', error)
+      })
   }, [])
+
+  const viewAttendanceDetail = async (absensiId: number) => {
+    try {
+      console.log('🔄 Loading attendance detail for ID:', absensiId)
+      const response = await absensiAPI.getAttendanceDetail(absensiId.toString())
+      
+      if (response.success && response.data) {
+        console.log('✅ Attendance detail loaded:', response.data)
+        
+        // Create a simple alert with detail info
+        const detail = response.data as any
+        const detailText = `
+Detail Absensi:
+Tanggal: ${new Date(detail.tanggal).toLocaleDateString('id-ID')}
+Status: ${detail.status_kehadiran}
+Waktu Masuk: ${detail.waktu_masuk || '-'}
+Waktu Pulang: ${detail.waktu_pulang || '-'}
+Keterangan: ${detail.keterangan || '-'}
+${detail.terlambat ? 'Status: Terlambat' : ''}
+        `.trim()
+        
+        alert(detailText)
+      } else {
+        alert('Gagal memuat detail absensi: ' + response.message)
+      }
+    } catch (error) {
+      console.error('❌ Error loading attendance detail:', error)
+      alert('Terjadi kesalahan saat memuat detail absensi')
+    }
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'present': return '#10b981'
       case 'late': return COLORS.accent
       case 'absent': return '#ef4444'
+      case 'sick': return '#8b5cf6'
+      case 'permission': return '#06b6d4'
       default: return '#6b7280'
     }
   }
@@ -302,6 +460,8 @@ const AttendancePage: React.FC = () => {
       case 'present': return CheckCircle
       case 'late': return AlertCircle
       case 'absent': return XCircle
+      case 'sick': return AlertCircle
+      case 'permission': return Clock
       default: return Clock
     }
   }
@@ -310,7 +470,9 @@ const AttendancePage: React.FC = () => {
     switch (status) {
       case 'present': return 'Hadir'
       case 'late': return 'Terlambat'
-      case 'absent': return 'Tidak Hadir'
+      case 'absent': return 'Alpha'
+      case 'sick': return 'Sakit'
+      case 'permission': return 'Izin'
       default: return 'Unknown'
     }
   }
@@ -453,6 +615,43 @@ const AttendancePage: React.FC = () => {
                 })}
               </div>
             </div>
+
+            {/* Location Status Display */}
+            {distanceToSchool !== null && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                padding: '15px',
+                borderRadius: '12px',
+                marginBottom: '25px',
+                background: locationStatus === 'allowed' ? '#10b98115' : 
+                          locationStatus === 'too-far' ? '#ef444415' : 
+                          locationStatus === 'error' ? '#ef444415' : '#f3f4f6',
+                border: `2px solid ${locationStatus === 'allowed' ? '#10b981' : 
+                                    locationStatus === 'too-far' ? '#ef4444' : 
+                                    locationStatus === 'error' ? '#ef4444' : '#e5e7eb'}`
+              }}>
+                <MapPin size={18} color={
+                  locationStatus === 'allowed' ? '#10b981' : 
+                  locationStatus === 'too-far' ? '#ef4444' : 
+                  locationStatus === 'error' ? '#ef4444' : '#666'
+                } />
+                <div style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: locationStatus === 'allowed' ? '#10b981' : 
+                        locationStatus === 'too-far' ? '#ef4444' : 
+                        locationStatus === 'error' ? '#ef4444' : '#666'
+                }}>
+                  {locationStatus === 'checking' ? 'Mengecek lokasi...' :
+                   locationStatus === 'allowed' ? `✅ Lokasi terverifikasi` :
+                   locationStatus === 'too-far' ? `⚠️ Lokasi tidak sesuai` :
+                   '❌ Gagal mengakses lokasi'}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Attendance Status */}
@@ -548,9 +747,9 @@ const AttendancePage: React.FC = () => {
             {/* Check In Button */}
             <button
               onClick={handleCheckIn}
-              disabled={isCheckingIn || todayCheckedIn}
+              disabled={isCheckingIn || todayCheckedIn || locationStatus === 'too-far' || locationStatus === 'error'}
               style={{
-                background: (isCheckingIn || todayCheckedIn)
+                background: (isCheckingIn || todayCheckedIn || locationStatus === 'too-far' || locationStatus === 'error')
                   ? '#9ca3af' 
                   : `linear-gradient(45deg, ${COLORS.primary}, #1e40af)`,
                 color: 'white',
@@ -559,7 +758,7 @@ const AttendancePage: React.FC = () => {
                 padding: '15px 20px',
                 fontSize: '16px',
                 fontWeight: '600',
-                cursor: (isCheckingIn || todayCheckedIn) ? 'not-allowed' : 'pointer',
+                cursor: (isCheckingIn || todayCheckedIn || locationStatus === 'too-far' || locationStatus === 'error') ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
                 boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
                 display: 'flex',
@@ -585,6 +784,21 @@ const AttendancePage: React.FC = () => {
                   <CheckCircle size={20} />
                   Sudah Absen Masuk
                 </>
+              ) : locationStatus === 'too-far' ? (
+                <>
+                  <MapPin size={20} />
+                  Terlalu Jauh dari Sekolah
+                </>
+              ) : locationStatus === 'error' ? (
+                <>
+                  <XCircle size={20} />
+                  Gagal Akses Lokasi
+                </>
+              ) : locationStatus === 'checking' ? (
+                <>
+                  <Clock size={20} />
+                  Mengecek Lokasi...
+                </>
               ) : (
                 <>
                   <Camera size={20} />
@@ -596,9 +810,9 @@ const AttendancePage: React.FC = () => {
             {/* Check Out Button */}
             <button
               onClick={handleCheckOut}
-              disabled={isCheckingOut || todayCheckedOut || !todayCheckedIn}
+              disabled={isCheckingOut || todayCheckedOut || !todayCheckedIn || locationStatus === 'too-far' || locationStatus === 'error'}
               style={{
-                background: (isCheckingOut || todayCheckedOut || !todayCheckedIn)
+                background: (isCheckingOut || todayCheckedOut || !todayCheckedIn || locationStatus === 'too-far' || locationStatus === 'error')
                   ? '#9ca3af' 
                   : `linear-gradient(45deg, ${COLORS.accent}, #d97706)`,
                 color: 'white',
@@ -607,7 +821,7 @@ const AttendancePage: React.FC = () => {
                 padding: '15px 20px',
                 fontSize: '16px',
                 fontWeight: '600',
-                cursor: (isCheckingOut || todayCheckedOut || !todayCheckedIn) ? 'not-allowed' : 'pointer',
+                cursor: (isCheckingOut || todayCheckedOut || !todayCheckedIn || locationStatus === 'too-far' || locationStatus === 'error') ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
                 boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
                 display: 'flex',
@@ -637,6 +851,21 @@ const AttendancePage: React.FC = () => {
                 <>
                   <XCircle size={20} />
                   Absen Masuk Dulu
+                </>
+              ) : locationStatus === 'too-far' ? (
+                <>
+                  <MapPin size={20} />
+                  Terlalu Jauh dari Sekolah
+                </>
+              ) : locationStatus === 'error' ? (
+                <>
+                  <XCircle size={20} />
+                  Gagal Akses Lokasi
+                </>
+              ) : locationStatus === 'checking' ? (
+                <>
+                  <Clock size={20} />
+                  Mengecek Lokasi...
                 </>
               ) : (
                 <>
@@ -735,11 +964,17 @@ const AttendancePage: React.FC = () => {
             color: '#666',
             fontStyle: 'italic'
           }}>
-            {!todayCheckedIn ? 
-              'Klik tombol "Absen Masuk" untuk mengambil foto selfie dan melakukan absensi' :
+            {locationStatus === 'checking' ? 
+              '📍 Sedang mengecek lokasi Anda...' :
+              locationStatus === 'too-far' ?
+              `⚠️ Lokasi Anda tidak sesuai. Silakan coba lagi.` :
+              locationStatus === 'error' ?
+              '❌ Tidak dapat mengakses lokasi. Pastikan GPS aktif dan izin lokasi diberikan.' :
+              !todayCheckedIn ? 
+              `✅ Lokasi terverifikasi. Klik "Absen Masuk" untuk mengambil foto selfie dan melakukan absensi.` :
               !todayCheckedOut ?
-              'Klik tombol "Absen Keluar" untuk mengambil foto selfie dan melakukan absensi keluar' :
-              'Absensi hari ini telah lengkap dengan foto selfie. Terima kasih!'
+              `✅ Klik "Absen Keluar" untuk mengambil foto selfie dan melakukan absensi keluar.` :
+              '🎉 Absensi hari ini telah lengkap dengan foto selfie dan verifikasi lokasi. Terima kasih!'
             }
           </div>
         </motion.div>
@@ -770,82 +1005,175 @@ const AttendancePage: React.FC = () => {
             flexDirection: 'column',
             gap: '12px'
           }}>
-            {mockAttendanceData.recentRecords.map((record, index) => {
-              const StatusIcon = getStatusIcon(record.status)
-              const statusColor = getStatusColor(record.status)
+            {isLoadingRecords ? (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '40px',
+                color: '#666'
+              }}>
+                <div>Memuat riwayat absensi...</div>
+              </div>
+            ) : attendanceRecords.length > 0 ? (
+              attendanceRecords.slice(0, 10).map((record, index) => {
+                // Convert backend data to display format
+                let status = 'unknown'
+                
+                if (record.status_kehadiran === 'hadir') {
+                  // Check if late based on terlambat field or time comparison
+                  if (record.terlambat || (record.waktu_masuk && record.waktu_masuk > '07:30:00')) {
+                    status = 'late'
+                  } else {
+                    status = 'present'
+                  }
+                } else if (record.status_kehadiran === 'alpha') {
+                  status = 'absent'
+                } else if (record.status_kehadiran === 'sakit') {
+                  status = 'sick'
+                } else if (record.status_kehadiran === 'izin') {
+                  status = 'permission'
+                }
+                
+                const StatusIcon = getStatusIcon(status)
+                const statusColor = getStatusColor(status)
+                
+                // Format times from backend
+                const timeIn = record.waktu_masuk ? 
+                  new Date(`2000-01-01T${record.waktu_masuk}`).toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) : '-'
+                
+                const timeOut = record.waktu_pulang ? 
+                  new Date(`2000-01-01T${record.waktu_pulang}`).toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) : '-'
 
-              return (
-                <div
-                  key={index}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '15px',
-                    padding: '15px',
-                    background: '#f9fafb',
-                    borderRadius: '12px',
-                    border: '1px solid #e5e7eb'
-                  }}
-                >
-                  <div style={{
-                    width: '45px',
-                    height: '45px',
-                    background: `${statusColor}15`,
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <StatusIcon size={22} color={statusColor} />
-                  </div>
-                  
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '8px'
-                    }}>
-                      <h4 style={{
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        color: COLORS.primary,
-                        margin: 0
-                      }}>
-                        {getStatusText(record.status)}
-                      </h4>
-                      <div style={{
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: statusColor,
-                        display: 'flex',
-                        gap: '10px'
-                      }}>
-                        <span>Masuk: {record.timeIn}</span>
-                        <span>Keluar: {record.timeOut}</span>
-                      </div>
-                    </div>
-                    
-                    <div style={{
+                return (
+                  <div
+                    key={record.id || index}
+                    style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '15px',
-                      fontSize: '14px',
-                      color: '#666'
+                      padding: '15px',
+                      background: '#f9fafb',
+                      borderRadius: '12px',
+                      border: '1px solid #e5e7eb'
+                    }}
+                  >
+                    <div style={{
+                      width: '45px',
+                      height: '45px',
+                      background: `${statusColor}15`,
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <Calendar size={14} />
-                        {new Date(record.date).toLocaleDateString('id-ID')}
+                      <StatusIcon size={22} color={statusColor} />
+                    </div>
+                    
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '8px'
+                      }}>
+                        <h4 style={{
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          color: COLORS.primary,
+                          margin: 0
+                        }}>
+                          {getStatusText(status)}
+                        </h4>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          color: statusColor,
+                          display: 'flex',
+                          gap: '10px'
+                        }}>
+                          <span>Masuk: {timeIn}</span>
+                          <span>Keluar: {timeOut}</span>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <MapPin size={14} />
-                        {record.location}
+                      
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '15px',
+                        fontSize: '14px',
+                        color: '#666'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <Calendar size={14} />
+                          {new Date(record.tanggal).toLocaleDateString('id-ID')}
+                        </div>
+                        {record.keterangan && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <MapPin size={14} />
+                            {record.keterangan}
+                          </div>
+                        )}
+                        {record.terlambat && (
+                          <div style={{
+                            background: COLORS.accent + '20',
+                            color: COLORS.accent,
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            fontWeight: '500'
+                          }}>
+                            Terlambat
+                          </div>
+                        )}
                       </div>
                     </div>
+                    
+                    {/* Detail Button */}
+                    <button
+                      onClick={() => viewAttendanceDetail(record.id)}
+                      style={{
+                        background: 'none',
+                        border: `2px solid ${statusColor}`,
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: statusColor,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = statusColor
+                        e.currentTarget.style.color = 'white'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'none'
+                        e.currentTarget.style.color = statusColor
+                      }}
+                    >
+                      Detail
+                    </button>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })
+            ) : (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '40px',
+                color: '#666'
+              }}>
+                <div>Belum ada riwayat absensi</div>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

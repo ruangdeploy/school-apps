@@ -29,18 +29,38 @@ class ApiService {
       ...options,
     }
 
+    // Debug logging - Request
+    console.group(`🌐 API Request: ${options.method || 'GET'} ${endpoint}`)
+    console.log('📍 Full URL:', url)
+    console.log('🔑 Token:', accessToken ? `${accessToken.substring(0, 20)}...` : 'None')
+    console.log('📋 Config:', {
+      method: config.method || 'GET',
+      headers: config.headers,
+      body: config.body ? (config.body instanceof FormData ? 'FormData' : config.body) : 'None'
+    })
+
     try {
+      const startTime = performance.now()
       const response = await fetch(url, config)
+      const endTime = performance.now()
+      
+      console.log(`⏱️ Response time: ${(endTime - startTime).toFixed(2)}ms`)
+      console.log(`📊 Status: ${response.status} ${response.statusText}`)
       
       if (!response.ok) {
         // Try to get error message from response
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        let errorData = null
+        
         try {
-          const errorData = await response.json()
+          errorData = await response.json()
           errorMessage = errorData.message || errorMessage
+          console.error('❌ Error Response:', errorData)
         } catch (e) {
-          // If can't parse JSON, use status text
+          console.error('❌ Failed to parse error response')
         }
+        
+        console.groupEnd()
         
         // Handle specific error responses from backend
         if (response.status === 401) {
@@ -58,6 +78,13 @@ class ApiService {
       }
       
       const data = await response.json()
+      
+      // Debug logging - Success Response
+      console.log('✅ Success Response:', {
+        status: response.status,
+        data: data
+      })
+      console.groupEnd()
 
       return {
         success: data.success || true,
@@ -65,6 +92,9 @@ class ApiService {
         message: data.message || 'Success'
       }
     } catch (error) {
+      console.error('🚨 API Error:', error)
+      console.groupEnd()
+      
       console.error('API request failed:', error)
       throw error
     }
@@ -106,20 +136,65 @@ class ApiService {
       body: formData,
     }
 
-    try {
-      const response = await fetch(url, config)
-      const data = await response.json()
+    // Debug logging - FormData Request
+    console.group(`🌐 API FormData Request: POST ${endpoint}`)
+    console.log('📍 Full URL:', url)
+    console.log('🔑 Token:', accessToken ? `${accessToken.substring(0, 20)}...` : 'None')
+    console.log('📋 FormData entries:')
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`  ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`)
+      } else {
+        console.log(`  ${key}: ${value}`)
+      }
+    }
 
+    try {
+      const startTime = performance.now()
+      const response = await fetch(url, config)
+      const endTime = performance.now()
+      
+      console.log(`⏱️ Response time: ${(endTime - startTime).toFixed(2)}ms`)
+      console.log(`📊 Status: ${response.status} ${response.statusText}`)
+      
       if (!response.ok) {
+        // Try to get error message from response
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        let errorData = null
+        
+        try {
+          errorData = await response.json()
+          errorMessage = errorData.message || errorMessage
+          console.error('❌ Error Response:', errorData)
+        } catch (e) {
+          console.error('❌ Failed to parse error response')
+        }
+        
+        console.groupEnd()
+        
+        // Handle specific error responses from backend
         if (response.status === 401) {
+          // Token expired or invalid, clear auth data
           localStorage.removeItem('accessToken')
           localStorage.removeItem('userType')
           localStorage.removeItem('userData')
           Cookies.remove('accessToken')
-          window.location.href = '/login'
+          // Don't redirect on login page
+          if (!window.location.pathname.includes('login')) {
+            window.location.href = '/login'
+          }
         }
-        throw new Error(data.message || `HTTP error! status: ${response.status}`)
+        throw new Error(errorMessage)
       }
+      
+      const data = await response.json()
+      
+      // Debug logging - Success Response
+      console.log('✅ Success Response:', {
+        status: response.status,
+        data: data
+      })
+      console.groupEnd()
 
       return {
         success: data.success || true,
@@ -127,7 +202,10 @@ class ApiService {
         message: data.message || 'Success'
       }
     } catch (error) {
-      console.error('API FormData request failed:', error)
+      console.error('🚨 FormData API Error:', error)
+      console.groupEnd()
+      
+      console.error('FormData API request failed:', error)
       throw error
     }
   }
