@@ -4,7 +4,7 @@ import { DateRange } from 'react-date-range'
 import 'react-date-range/dist/styles.css'
 import 'react-date-range/dist/theme/default.css'
 import { motion } from 'framer-motion'
-import { absensiAPI } from '../services/api'
+import { absensiAPI, orangTuaAPI } from '../services/api'
 import { 
   Calendar, 
   Clock, 
@@ -35,6 +35,10 @@ const COLORS = {
 // }
 
 const AttendancePage: React.FC = () => {
+  const [user] = useState(() => {
+    const userData = localStorage.getItem('userData')
+    return userData ? JSON.parse(userData) : null
+  })
   const [isCheckingIn, setIsCheckingIn] = useState(false)
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [todayCheckedIn, setTodayCheckedIn] = useState(false)
@@ -197,8 +201,15 @@ const AttendancePage: React.FC = () => {
         distance: distanceToSchool ? `${distanceToSchool.toFixed(2)}m` : 'unknown'
       })
       
-      // Call API
-      const response = await absensiAPI.checkIn(formData)
+      // Call API - use different endpoint for orang_tua
+      let response
+      if (user?.tipe_user === 'orang_tua') {
+        console.log('📤 Using orang tua API for check-in')
+        response = await orangTuaAPI.checkInAnak(formData)
+      } else {
+        console.log('📤 Using regular API for check-in')
+        response = await absensiAPI.checkIn(formData)
+      }
       
       if (response.success) {
         setTodayCheckedIn(true)
@@ -211,12 +222,21 @@ const AttendancePage: React.FC = () => {
         setShowCheckInCamera(false)
         setTempPhoto(null)
         
-        alert(`✅ Absensi masuk berhasil!\n\nJarak dari sekolah: ${distanceToSchool ? distanceToSchool.toFixed(0) + ' meter' : 'unknown'}`)
+        const successMessage = user?.tipe_user === 'orang_tua' 
+          ? '✅ Absensi masuk anak berhasil dicatat!'
+          : `✅ Absensi masuk berhasil!\n\nJarak dari sekolah: ${distanceToSchool ? distanceToSchool.toFixed(0) + ' meter' : 'unknown'}`
+        
+        alert(successMessage)
         
         // Refresh attendance records after successful check-in
         loadAttendanceRecords()
       } else {
-        throw new Error(response.message || 'Absensi gagal')
+        // Handle specific error messages from API
+        if (response.message && response.message.includes('sudah melakukan absensi')) {
+          alert(`ℹ️ ${response.message}\n\nData absensi sudah tercatat untuk hari ini.`)
+        } else {
+          throw new Error(response.message || 'Absensi gagal')
+        }
       }
     } catch (error) {
       console.error('Check-in error:', error)
@@ -249,8 +269,15 @@ const AttendancePage: React.FC = () => {
         distance: distanceToSchool ? `${distanceToSchool.toFixed(2)}m` : 'unknown'
       })
       
-      // Call API
-      const response = await absensiAPI.checkOut(formData)
+      // Call API - use different endpoint for orang_tua
+      let response
+      if (user?.tipe_user === 'orang_tua') {
+        console.log('📤 Using orang tua API for check-out')
+        response = await orangTuaAPI.checkOutAnak(formData)
+      } else {
+        console.log('📤 Using regular API for check-out')
+        response = await absensiAPI.checkOut(formData)
+      }
       
       if (response.success) {
         setTodayCheckedOut(true)
@@ -263,12 +290,21 @@ const AttendancePage: React.FC = () => {
         setShowCheckOutCamera(false)
         setTempPhoto(null)
         
-        alert(`✅ Absensi pulang berhasil!\n\nJarak dari sekolah: ${distanceToSchool ? distanceToSchool.toFixed(0) + ' meter' : 'unknown'}`)
+        const successMessage = user?.tipe_user === 'orang_tua' 
+          ? '✅ Absensi pulang anak berhasil dicatat!'
+          : `✅ Absensi pulang berhasil!\n\nJarak dari sekolah: ${distanceToSchool ? distanceToSchool.toFixed(0) + ' meter' : 'unknown'}`
+        
+        alert(successMessage)
         
         // Refresh attendance records after successful check-out
         loadAttendanceRecords()
       } else {
-        throw new Error(response.message || 'Absensi gagal')
+        // Handle specific error messages from API
+        if (response.message && response.message.includes('sudah melakukan absensi')) {
+          alert(`ℹ️ ${response.message}\n\nData absensi sudah tercatat untuk hari ini.`)
+        } else {
+          throw new Error(response.message || 'Absensi gagal')
+        }
       }
     } catch (error) {
       console.error('Check-out error:', error)
@@ -309,7 +345,7 @@ const AttendancePage: React.FC = () => {
   // }
 
   // Function to check location and distance to school
-  // DISABLED: Location verification has been disabled
+  // Different rules for different user types
   const checkLocationAndDistance = async (): Promise<{latitude: number, longitude: number, distance: number, allowed: boolean}> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -323,19 +359,32 @@ const AttendancePage: React.FC = () => {
         (position) => {
           const userLat = position.coords.latitude
           const userLon = position.coords.longitude
-          // DISABLED: Distance calculation removed
-          const distance = 0 // Always allow
+          const distance = 0 // Distance calculation disabled
           
           console.log('📍 User location:', { lat: userLat, lon: userLon })
-          console.log('🏫 School location verification disabled')
-          console.log('📏 Distance verification disabled')
+          console.log('👤 User type:', user?.tipe_user)
           
           setUserLocation({ latitude: userLat, longitude: userLon })
           setDistanceToSchool(distance)
           
-          // DISABLED: Always allow attendance regardless of location
-          const allowed = true
-          setLocationStatus('allowed')
+          // Location rules based on user type:
+          // - orang_tua: Can attend from anywhere (no location restriction)
+          // - guru: Can attend from anywhere (flexible for teachers)
+          // - siswa: Location verification disabled for now
+          let allowed = true
+          
+          if (user?.tipe_user === 'orang_tua') {
+            console.log('👨‍👩‍👧‍👦 Orang tua can attend from anywhere')
+            allowed = true
+          } else if (user?.tipe_user === 'guru') {
+            console.log('👨‍🏫 Guru can attend with flexible location')
+            allowed = true
+          } else {
+            console.log('👨‍🎓 Siswa attendance - location check disabled')
+            allowed = true
+          }
+          
+          setLocationStatus(allowed ? 'allowed' : 'too-far')
           
           resolve({
             latitude: userLat,
@@ -525,14 +574,24 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
               color: COLORS.primary,
               margin: 0
             }}>
-              Absensi
+              {user?.tipe_user === 'orang_tua' 
+                ? 'Absensi Anak'
+                : user?.tipe_user === 'guru'
+                ? 'Kelola Absensi'
+                : 'Absensi'
+              }
             </h1>
             <p style={{
               fontSize: '14px',
               color: '#666',
               margin: 0
             }}>
-              Kelola kehadiran harian Anda
+              {user?.tipe_user === 'orang_tua' 
+                ? 'Lakukan absensi untuk anak dari mana saja'
+                : user?.tipe_user === 'guru'
+                ? 'Kelola kehadiran siswa di kelas Anda'
+                : 'Kelola kehadiran harian Anda'
+              }
             </p>
           </div>
         </div>
@@ -581,7 +640,12 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
               color: COLORS.primary,
               margin: '0 0 10px 0'
             }}>
-              Absensi Hari Ini
+              {user?.tipe_user === 'orang_tua' 
+                ? 'Absensi Anak Hari Ini'
+                : user?.tipe_user === 'guru'
+                ? 'Absensi Guru Hari Ini'
+                : 'Absensi Hari Ini'
+              }
             </h2>
 
             <p style={{
@@ -589,7 +653,12 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
               color: '#666',
               margin: '0 0 25px 0'
             }}>
-              Catat waktu masuk dan keluar sekolah Anda
+              {user?.tipe_user === 'orang_tua' 
+                ? 'Catat kehadiran anak Anda dengan mudah dari lokasi manapun'
+                : user?.tipe_user === 'guru'
+                ? 'Catat kehadiran Anda sebagai guru dan kelola absensi siswa'
+                : 'Catat waktu masuk dan keluar sekolah Anda'
+              }
             </p>
 
             <div style={{
@@ -974,10 +1043,18 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
               locationStatus === 'error' ?
               '❌ Tidak dapat mengakses lokasi. Pastikan GPS aktif dan izin lokasi diberikan.' :
               !todayCheckedIn ? 
-              `✅ Lokasi terverifikasi. Klik "Absen Masuk" untuk mengambil foto selfie dan melakukan absensi.` :
+              user?.tipe_user === 'orang_tua' 
+                ? `✅ Anda dapat melakukan absensi anak dari lokasi manapun. Klik "Absen Masuk" untuk mengambil foto dan melakukan absensi.`
+                : user?.tipe_user === 'guru'
+                ? `✅ Lokasi terverifikasi. Klik "Absen Masuk" untuk mengambil foto dan melakukan absensi guru.`
+                : `✅ Lokasi terverifikasi. Klik "Absen Masuk" untuk mengambil foto selfie dan melakukan absensi.` :
               !todayCheckedOut ?
-              `✅ Klik "Absen Keluar" untuk mengambil foto selfie dan melakukan absensi keluar.` :
-              '🎉 Absensi hari ini telah lengkap dengan foto selfie dan verifikasi lokasi. Terima kasih!'
+              user?.tipe_user === 'orang_tua' 
+                ? `✅ Klik "Absen Keluar" untuk mengambil foto dan melakukan absensi keluar anak.`
+                : `✅ Klik "Absen Keluar" untuk mengambil foto selfie dan melakukan absensi keluar.` :
+              user?.tipe_user === 'orang_tua'
+                ? '🎉 Absensi anak hari ini telah lengkap. Terima kasih!'
+                : '🎉 Absensi hari ini telah lengkap dengan foto selfie dan verifikasi lokasi. Terima kasih!'
             }
           </div>
         </motion.div>

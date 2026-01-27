@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import MultiLoginPage from './MultiLoginPage'
 import HomePage from './HomePage'
 import AttendancePage from './AttendancePage'
+import GuruManageAttendancePage from './GuruManageAttendancePage'
 import SchedulePage from './SchedulePage'
 import AssignmentsPage from './AssignmentsPage'
 import GradesPage from './GradesPage'
@@ -17,6 +18,7 @@ const AppRouter: React.FC = () => {
         <Route path="/login" element={<MultiLoginPage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/attendance" element={<AttendancePage />} />
+        <Route path="/guru/manage-attendance" element={<GuruManageAttendancePage />} />
         <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/assignments" element={<AssignmentsPage />} />
         <Route path="/grades" element={<GradesPage />} />

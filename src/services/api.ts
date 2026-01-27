@@ -250,6 +250,17 @@ export const absensiAPI = {
     apiService.get(`/absensi/siswa/detail?absensi_id=${absensi_id}`),
 }
 
+// Orang Tua APIs - untuk absensi anak
+export const orangTuaAPI = {
+  // Absensi masuk anak oleh orang tua
+  checkInAnak: (formData: FormData) =>
+    apiService.postFormData('/absensi/orang-tua', formData),
+  
+  // Absensi pulang anak oleh orang tua  
+  checkOutAnak: (formData: FormData) =>
+    apiService.postFormData('/absensi/orang-tua/pulang', formData),
+}
+
 // Siswa APIs
 export const siswaAPI = {
   getProfile: () =>
@@ -272,6 +283,14 @@ export const guruAPI = {
     
   getAbsensiKelas: (kelas_id: string, tanggal?: string) =>
     apiService.get(`/guru/absensi/${kelas_id}${tanggal ? `?tanggal=${tanggal}` : ''}`),
+    
+  // Update absensi siswa oleh guru
+  updateAbsensiSiswa: (data: { siswa_id: number; tanggal: string; status_kehadiran: string }) =>
+    apiService.post('/absensi/guru/update', data),
+    
+  // Get daftar siswa di kelas yang diajar guru
+  getDaftarSiswa: (kelas_id?: string) =>
+    apiService.get(`/guru/siswa${kelas_id ? `?kelas_id=${kelas_id}` : ''}`),
 }
 
 // Config APIs
