@@ -1,20 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { 
   Calendar, 
   Clock, 
   BookOpen,
   Award,
-  Bell,
   ChevronRight,
   CheckCircle,
-  X,
-  Users,
-  MapPin,
-  Eye,
-  CalendarDays
+  Users
 } from 'lucide-react'
-import { apiService } from '../services/api'
+import { absensiAPI } from '../services/api'
 
 // Color palette constants - same as login page
 const COLORS = {
@@ -36,10 +31,6 @@ const HomePage: React.FC = () => {
     totalAlpha: 0,
     persentaseKehadiran: 0
   })
-  const [showCalendarModal, setShowCalendarModal] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false)
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null)
 
   useEffect(() => {
     // Update time every second
@@ -63,7 +54,7 @@ const HomePage: React.FC = () => {
   const loadTodayAttendance = async () => {
     try {
       console.log('🔄 Loading today\'s attendance...')
-      const response = await apiService.absensiAPI.getTodayAttendance()
+      const response = await absensiAPI.getTodayAttendance()
       
       if (response.success && response.data) {
         console.log('✅ Today attendance loaded successfully:', response.data)
@@ -87,10 +78,10 @@ const HomePage: React.FC = () => {
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
       const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
 
-      const response = await apiService.absensiAPI.getAttendanceHistory({
-        tanggal_awal: firstDay.toISOString().split('T')[0],
-        tanggal_akhir: lastDay.toISOString().split('T')[0]
-      })
+      const response = await absensiAPI.getAttendanceHistory(
+        firstDay.toISOString().split('T')[0],
+        lastDay.toISOString().split('T')[0]
+      )
       
       if (response.success && response.data) {
         console.log('✅ Attendance history loaded successfully:', response.data)

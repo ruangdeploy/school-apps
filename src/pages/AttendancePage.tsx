@@ -14,7 +14,9 @@ import {
   ArrowLeft,
   MapPin,
   Camera,
-  RotateCcw
+  RotateCcw,
+  LogIn,
+  LogOut
 } from 'lucide-react'
 
 // Color palette constants - same as login page
@@ -369,8 +371,8 @@ const AttendancePage: React.FC = () => {
         startDate.toISOString().split('T')[0],
         endDate.toISOString().split('T')[0]
       )
-      if (response.success && response.data && Array.isArray(response.data.riwayat)) {
-        setAttendanceRecords(response.data.riwayat)
+      if (response.success && response.data && Array.isArray((response.data as any).riwayat)) {
+        setAttendanceRecords((response.data as any).riwayat)
       } else {
         setAttendanceRecords([])
       }
@@ -387,7 +389,7 @@ const AttendancePage: React.FC = () => {
       try {
         const response = await absensiAPI.getTodayAttendance()
         if (response.success && response.data) {
-          const todayData = response.data.absensi
+          const todayData = (response.data as any).absensi
           if (todayData && todayData.jam_masuk) {
             setTodayCheckedIn(true)
             setCheckInTime(todayData.jam_masuk)
@@ -1001,38 +1003,63 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
             }}>
               Riwayat Absensi
             </h3>
-            <button
+            <motion.button
               onClick={() => setShowCalendar((v) => !v)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               style={{
-                background: COLORS.primary,
+                background: showCalendar 
+                  ? `linear-gradient(135deg, ${COLORS.accent}, #e67e22)` 
+                  : `linear-gradient(135deg, ${COLORS.primary}, #1e40af)`,
                 color: 'white',
                 border: 'none',
-                borderRadius: '8px',
-                padding: '8px 16px',
+                borderRadius: '12px',
+                padding: '12px 20px',
                 fontWeight: 600,
                 fontSize: '14px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                boxShadow: showCalendar 
+                  ? '0 4px 20px rgba(244, 163, 0, 0.3)' 
+                  : '0 4px 20px rgba(15, 76, 92, 0.3)',
+                transition: 'all 0.3s ease'
               }}
             >
               <Calendar size={18} />
-              Filter Tanggal
-            </button>
+              {showCalendar ? 'Tutup Filter' : 'Filter Tanggal'}
+            </motion.button>
           </div>
           {showCalendar && (
-            <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'center' }}>
-              <DateRange
-                editableDateInputs={true}
-                onChange={(rangesByKey: any) => setDateRange([rangesByKey.selection])}
-                moveRangeOnFirstSelection={false}
-                ranges={dateRange}
-                maxDate={today}
-                locale={undefined}
-              />
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, height: 0, y: -20 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              style={{ 
+                marginBottom: 20,
+                width: '100%'
+              }}
+            >
+              <div style={{
+                background: COLORS.white,
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                padding: '16px',
+                border: `1px solid #e5e7eb`,
+                width: '100%'
+              }}>
+                <DateRange
+                  editableDateInputs={true}
+                  onChange={(rangesByKey: any) => setDateRange([rangesByKey.selection])}
+                  moveRangeOnFirstSelection={false}
+                  ranges={dateRange}
+                  maxDate={today}
+                  locale={undefined}
+                />
+              </div>
+            </motion.div>
           )}
           <div style={{
             display: 'flex',
@@ -1075,28 +1102,36 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
                   ? record.jam_pulang
                   : '-'
                 return (
-                  <div
+                  <motion.div
                     key={record.id || index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    whileHover={{ scale: 1.02, y: -2 }}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '15px',
-                      padding: '15px',
-                      background: '#f9fafb',
-                      borderRadius: '12px',
-                      border: '1px solid #e5e7eb'
+                      gap: '20px',
+                      padding: '20px',
+                      background: `linear-gradient(135deg, ${COLORS.white} 0%, ${statusColor}05 100%)`,
+                      borderRadius: '16px',
+                      border: `2px solid ${statusColor}20`,
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
                     }}
                   >
                     <div style={{
-                      width: '45px',
-                      height: '45px',
-                      background: `${statusColor}15`,
-                      borderRadius: '10px',
+                      width: '60px',
+                      height: '60px',
+                      background: `linear-gradient(135deg, ${statusColor}, ${statusColor}CC)`,
+                      borderRadius: '16px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      boxShadow: `0 4px 15px ${statusColor}30`
                     }}>
-                      <StatusIcon size={22} color={statusColor} />
+                      <StatusIcon size={28} color="white" />
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{
@@ -1114,14 +1149,46 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
                           {getStatusText(status)}
                         </h4>
                         <div style={{
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          color: statusColor,
                           display: 'flex',
-                          gap: '10px'
+                          gap: '15px',
+                          alignItems: 'center'
                         }}>
-                          <span>Masuk: {timeIn}</span>
-                          <span>Keluar: {timeOut}</span>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: '#10b98115',
+                            padding: '8px 12px',
+                            borderRadius: '10px',
+                            border: '1px solid #10b981'
+                          }}>
+                            <LogIn size={16} color="#10b981" />
+                            <span style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: '#10b981'
+                            }}>
+                              {timeIn}
+                            </span>
+                          </div>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: timeOut !== '-' ? '#ef444415' : '#9ca3af15',
+                            padding: '8px 12px',
+                            borderRadius: '10px',
+                            border: `1px solid ${timeOut !== '-' ? '#ef4444' : '#9ca3af'}`
+                          }}>
+                            <LogOut size={16} color={timeOut !== '-' ? '#ef4444' : '#9ca3af'} />
+                            <span style={{
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: timeOut !== '-' ? '#ef4444' : '#9ca3af'
+                            }}>
+                              {timeOut}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div style={{
@@ -1141,45 +1208,47 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
                             {record.keterangan}
                           </div>
                         )}
-                        {record.terlambat && (
+                        {record.status_keterlambatan === 'telat' && (
                           <div style={{
-                            background: COLORS.accent + '20',
-                            color: COLORS.accent,
-                            padding: '2px 8px',
-                            borderRadius: '12px',
+                            background: `linear-gradient(135deg, ${COLORS.accent}, #e67e22)`,
+                            color: 'white',
+                            padding: '6px 12px',
+                            borderRadius: '16px',
                             fontSize: '12px',
-                            fontWeight: '500'
+                            fontWeight: '600',
+                            boxShadow: `0 2px 8px ${COLORS.accent}30`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
                           }}>
+                            <AlertCircle size={12} />
                             Terlambat
                           </div>
                         )}
                       </div>
                     </div>
-                    <button
+                    
+                    {/* Detail Button */}
+                    <motion.button
                       onClick={() => viewAttendanceDetail(record.id)}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       style={{
-                        background: 'none',
-                        border: `2px solid ${statusColor}`,
-                        borderRadius: '8px',
-                        padding: '8px 12px',
+                        background: `linear-gradient(135deg, ${statusColor}, ${statusColor}CC)`,
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        padding: '12px 16px',
                         fontSize: '12px',
                         fontWeight: '600',
-                        color: statusColor,
                         cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = statusColor
-                        e.currentTarget.style.color = 'white'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'none'
-                        e.currentTarget.style.color = statusColor
+                        boxShadow: `0 4px 15px ${statusColor}30`,
+                        transition: 'all 0.3s ease'
                       }}
                     >
                       Detail
-                    </button>
-                  </div>
+                    </motion.button>
+                  </motion.div>
                 )
               })
             ) : (
@@ -1370,7 +1439,7 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
         </div>
       )}
 
-      {/* CSS Animations */}
+      {/* CSS Animations & Custom Styling */}
       <style>{`
         @keyframes spin {
           0% {
@@ -1378,6 +1447,129 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
           }
           100% {
             transform: rotate(360deg);
+          }
+        }
+        
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+        
+        @keyframes slideInDown {
+          from {
+            transform: translateY(-100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        
+        /* Custom Calendar Styling - Simple & Clean */
+        .rdrCalendarWrapper {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+          box-shadow: none !important;
+          border: none !important;
+          background: transparent !important;
+          width: 100% !important;
+        }
+        
+        .rdrDateRangeWrapper {
+          background: transparent !important;
+          width: 100% !important;
+        }
+        
+        .rdrMonth {
+          background: transparent !important;
+          width: 100% !important;
+        }
+        
+        .rdrMonthAndYearWrapper {
+          background-color: #f8fafc !important;
+          border-bottom: 1px solid #e2e8f0 !important;
+          padding: 12px !important;
+        }
+        
+        .rdrMonthAndYearPickers {
+          font-weight: 600 !important;
+          color: #334155 !important;
+        }
+        
+        .rdrNextPrevButton {
+          background-color: #f1f5f9 !important;
+          border: 1px solid #e2e8f0 !important;
+          border-radius: 6px !important;
+        }
+        
+        .rdrNextPrevButton:hover {
+          background-color: #e2e8f0 !important;
+        }
+        
+        .rdrWeekDay {
+          color: #64748b !important;
+          font-weight: 500 !important;
+          font-size: 13px !important;
+        }
+        
+        .rdrDay {
+          border-radius: 6px !important;
+        }
+        
+        .rdrDayNumber span {
+          color: #334155 !important;
+          font-weight: 400 !important;
+        }
+        
+        .rdrDayToday .rdrDayNumber span {
+          background-color: #3b82f6 !important;
+          color: white !important;
+          font-weight: 600 !important;
+        }
+        
+        .rdrDayActive .rdrDayNumber span {
+          background-color: #1e40af !important;
+          color: white !important;
+        }
+        
+        .rdrInRange {
+          background-color: #dbeafe !important;
+        }
+        
+        .rdrStartEdge, .rdrEndEdge {
+          background-color: #3b82f6 !important;
+        }
+        
+        .rdrStartEdge .rdrDayNumber span, .rdrEndEdge .rdrDayNumber span {
+          background-color: transparent !important;
+          color: white !important;
+        }
+        
+        .rdrDayHovered .rdrDayNumber span {
+          background-color: #f1f5f9 !important;
+          color: #1e40af !important;
+        }
+        
+        .rdrDayDisabled .rdrDayNumber span {
+          color: #cbd5e1 !important;
+        }
+        
+        .rdrInputRanges {
+          display: none !important;
+        }
+        
+        .rdrStaticRanges {
+          display: none !important;
+        }
+        
+        /* Simple responsive styling */
+        @media (max-width: 480px) {
+          .rdrCalendarWrapper {
+            width: 100% !important;
           }
         }
       `}</style>
