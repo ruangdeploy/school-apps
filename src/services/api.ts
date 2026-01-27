@@ -3,6 +3,11 @@ import type { ApiResponse } from '../types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
 
+// Debug: Log the API base URL being used
+console.log('🔗 API Base URL:', API_BASE_URL)
+console.log('🌍 Environment:', import.meta.env.MODE)
+console.log('📋 All Vite Env:', import.meta.env)
+
 class ApiService {
   private baseURL: string
 
