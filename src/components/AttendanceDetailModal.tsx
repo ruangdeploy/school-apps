@@ -3,9 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   X, 
   Calendar, 
-  Clock, 
   User, 
-  MapPin, 
   CheckCircle, 
   XCircle,
   AlertCircle,

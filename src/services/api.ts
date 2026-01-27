@@ -278,17 +278,30 @@ export const guruAPI = {
   getProfile: () =>
     apiService.get('/guru/profile'),
     
+  // Get daftar kelas yang diajar guru
   getKelas: () =>
     apiService.get('/guru/kelas'),
     
-  getAbsensiKelas: (kelas_id: string, tanggal?: string) =>
-    apiService.get(`/guru/absensi/${kelas_id}${tanggal ? `?tanggal=${tanggal}` : ''}`),
+  // Get daftar siswa di kelas tertentu
+  getSiswaKelas: (kelas_id: number) =>
+    apiService.get(`/guru/kelas/${kelas_id}/siswa`),
     
   // Update absensi siswa oleh guru
   updateAbsensiSiswa: (data: { siswa_id: number; tanggal: string; status_kehadiran: string }) =>
     apiService.post('/absensi/guru/update', data),
     
-  // Get daftar siswa di kelas yang diajar guru
+  // Get riwayat absensi kelas
+  getRiwayatAbsensiKelas: (kelas_id: number, tanggal_awal: string, tanggal_akhir: string) =>
+    apiService.get(`/absensi/guru/kelas/riwayat?kelas_id=${kelas_id}&tanggal_awal=${tanggal_awal}&tanggal_akhir=${tanggal_akhir}`),
+    
+  // Get detail absensi siswa untuk guru
+  getDetailAbsensiSiswa: (absensi_id: number) =>
+    apiService.get(`/absensi/guru/detail?absensi_id=${absensi_id}`),
+    
+  // Old endpoints (keep for compatibility)
+  getAbsensiKelas: (kelas_id: string, tanggal?: string) =>
+    apiService.get(`/guru/absensi/${kelas_id}${tanggal ? `?tanggal=${tanggal}` : ''}`),
+    
   getDaftarSiswa: (kelas_id?: string) =>
     apiService.get(`/guru/siswa${kelas_id ? `?kelas_id=${kelas_id}` : ''}`),
 }

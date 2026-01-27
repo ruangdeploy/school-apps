@@ -761,7 +761,7 @@ const HomePage: React.FC = () => {
                   subtitle: 'Update dan kelola kehadiran siswa',
                   icon: Clock,
                   color: COLORS.primary,
-                  action: () => window.location.href = '/guru/manage-attendance'
+                  action: () => window.location.href = '/guru/attendance'
                 },
                 {
                   title: 'Absensi Pribadi',
