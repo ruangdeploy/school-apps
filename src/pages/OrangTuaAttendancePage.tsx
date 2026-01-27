@@ -14,8 +14,6 @@ import {
   BookOpen,
   RefreshCw,
   Search,
-  Filter,
-  BarChart3,
   ChevronRight,
   FileText,
   Heart
@@ -108,16 +106,16 @@ const spinnerStyle = `
 }
 
 .compact-calendar .rdrInRange {
-  background: rgba(59, 130, 246, 0.1) !important;
+  background: rgba(15, 76, 92, 0.1) !important;
 }
 
 .compact-calendar .rdrStartEdge,
 .compact-calendar .rdrEndEdge {
-  background: #3b82f6 !important;
+  background: rgb(15, 76, 92) !important;
 }
 
 .compact-calendar .rdrSelected {
-  background: #3b82f6 !important;
+  background: rgb(15, 76, 92) !important;
 }
 `
 
@@ -130,13 +128,9 @@ if (typeof document !== 'undefined') {
 
 // Color palette constants
 const COLORS = {
-  primary: '#3b82f6',
-  secondary: '#64748b', 
-  accent: '#10b981',
-  warning: '#f59e0b',
-  danger: '#ef4444',
-  success: '#22c55e',
-  white: '#ffffff',
+  primary: 'rgb(15, 76, 92)',
+  accent: 'rgb(244, 163, 0)',
+  white: 'rgb(255, 255, 255)',
   gray: {
     50: '#f8fafc',
     100: '#f1f5f9',
@@ -149,6 +143,10 @@ const COLORS = {
     800: '#1e293b',
     900: '#0f172a'
   },
+  success: 'rgb(34, 197, 94)',
+  warning: 'rgb(245, 158, 11)',
+  danger: 'rgb(239, 68, 68)',
+  info: 'rgb(59, 130, 246)',
   text: '#1e293b'
 }
 
@@ -391,7 +389,7 @@ export default function OrangTuaAttendancePage() {
       case 'hadir': return COLORS.success
       case 'alpa': return COLORS.danger
       case 'sakit': return COLORS.warning
-      case 'izin': return COLORS.primary
+      case 'izin': return COLORS.info
       case 'telat': return COLORS.warning
       default: return COLORS.gray[500]
     }
@@ -418,622 +416,845 @@ export default function OrangTuaAttendancePage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '20px'
+      background: `linear-gradient(135deg, ${COLORS.primary} 0%, rgba(244, 163, 0, 0.1) 100%)`,
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{
-          background: COLORS.white,
-          borderRadius: '16px',
-          padding: '24px',
-          marginBottom: '20px',
-          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
-        }}
-      >
+      <div style={{
+        background: COLORS.white,
+        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10
+      }}>
         <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: '0 20px',
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '16px'
+          height: '70px',
+          gap: '15px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Heart size={24} color={COLORS.primary} />
+          <button
+            onClick={() => window.history.back()}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '8px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <ArrowLeft size={24} color={COLORS.primary} />
+          </button>
+          <div>
             <h1 style={{
-              fontSize: '24px',
+              fontSize: '20px',
               fontWeight: '700',
-              color: COLORS.text,
+              color: COLORS.primary,
               margin: 0
             }}>
               Absensi Anak
             </h1>
           </div>
-          
-          <button
-            onClick={() => window.history.back()}
-            style={{
-              background: COLORS.gray[100],
-              border: 'none',
-              borderRadius: '12px',
-              padding: '12px',
-              cursor: 'pointer',
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '30px 20px'
+      }}>
+        {/* Child Selector Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            background: COLORS.white,
+            borderRadius: '20px',
+            padding: '30px',
+            marginBottom: '30px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+          }}
+        >
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '15px',
+            marginBottom: '25px'
+          }}>
+            <div style={{
+              width: '50px',
+              height: '50px',
+              background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+              borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            <ArrowLeft size={20} color={COLORS.gray[600]} />
-          </button>
-        </div>
-
-        {/* Anak Selector */}
-        <div style={{
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'center',
-          flexWrap: 'wrap'
-        }}>
-          <span style={{
-            fontSize: '14px',
-            fontWeight: '600',
-            color: COLORS.gray[700]
-          }}>
-            Pilih Anak:
-          </span>
-          
-          {anakList.map((anak) => (
-            <button
-              key={anak.siswa_id}
-              onClick={() => setSelectedAnak(anak)}
-              style={{
-                background: selectedAnak?.siswa_id === anak.siswa_id ? COLORS.primary : COLORS.gray[100],
-                color: selectedAnak?.siswa_id === anak.siswa_id ? COLORS.white : COLORS.gray[700],
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                cursor: 'pointer',
+              justifyContent: 'center'
+            }}>
+              <Heart size={24} color="white" />
+            </div>
+            <div>
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: '700',
+                color: COLORS.primary,
+                margin: '0 0 5px 0'
+              }}>
+                Kelola Absensi Anak
+              </h2>
+              <p style={{
                 fontSize: '14px',
-                fontWeight: '500',
-                transition: 'all 0.2s'
-              }}
-            >
-              {anak.nama_lengkap} - {anak.kelas}
-            </button>
-          ))}
-        </div>
+                color: '#666',
+                margin: 0
+              }}>
+                Pilih anak untuk melihat dan mengelola kehadiran
+              </p>
+            </div>
+          </div>
 
-        {/* Quick Actions */}
-        {selectedAnak && (
+          {/* Anak Selector */}
           <div style={{
-            marginTop: '16px',
             display: 'flex',
-            gap: '12px',
+            gap: '16px',
+            alignItems: 'center',
             flexWrap: 'wrap'
           }}>
-            <button
-              onClick={handleAbsenMasuk}
-              disabled={isSubmitting}
-              style={{
-                background: COLORS.success,
-                color: COLORS.white,
-                border: 'none',
-                borderRadius: '8px',
-                padding: '12px 20px',
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                fontSize: '14px',
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                opacity: isSubmitting ? 0.7 : 1
-              }}
-            >
-              <CheckCircle size={16} />
-              Absen Masuk
-            </button>
-
-            <button
-              onClick={handleAbsenPulang}
-              disabled={isSubmitting}
-              style={{
-                background: COLORS.warning,
-                color: COLORS.white,
-                border: 'none',
-                borderRadius: '8px',
-                padding: '12px 20px',
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                fontSize: '14px',
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                opacity: isSubmitting ? 0.7 : 1
-              }}
-            >
-              <Clock size={16} />
-              Absen Pulang
-            </button>
-
-            <button
-              onClick={() => setShowIzinModal(true)}
-              style={{
-                background: COLORS.primary,
-                color: COLORS.white,
-                border: 'none',
-                borderRadius: '8px',
-                padding: '12px 20px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <FileText size={16} />
-              Ajukan Izin
-            </button>
+            <span style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: COLORS.primary,
+              minWidth: 'fit-content'
+            }}>
+              Pilih Anak:
+            </span>
+            
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              {anakList.map((anak) => (
+                <motion.div
+                  key={anak.siswa_id}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSelectedAnak(anak)}
+                  style={{
+                    background: selectedAnak?.siswa_id === anak.siswa_id 
+                      ? `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})` 
+                      : COLORS.white,
+                    color: selectedAnak?.siswa_id === anak.siswa_id ? COLORS.white : COLORS.primary,
+                    border: selectedAnak?.siswa_id === anak.siswa_id 
+                      ? 'none' 
+                      : `2px solid ${COLORS.primary}20`,
+                    borderRadius: '16px',
+                    padding: '16px 24px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    transition: 'all 0.3s ease',
+                    boxShadow: selectedAnak?.siswa_id === anak.siswa_id 
+                      ? '0 8px 25px rgba(0, 0, 0, 0.15)' 
+                      : '0 4px 15px rgba(0, 0, 0, 0.05)',
+                    textAlign: 'center'
+                  }}
+                >
+                  <div style={{ marginBottom: '4px' }}>
+                    {anak.nama_lengkap}
+                  </div>
+                  <div style={{
+                    fontSize: '12px',
+                    opacity: 0.8,
+                    fontWeight: '500'
+                  }}>
+                    {anak.kelas}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        )}
-      </motion.div>
 
-      {selectedAnak && (
-        <>
-          {/* Statistics */}
-          {statistics && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              style={{
-                background: COLORS.white,
-                borderRadius: '16px',
-                padding: '20px',
-                marginBottom: '20px',
-                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
-              }}
-            >
+          {/* Quick Actions */}
+          {selectedAnak && (
+            <div style={{
+              marginTop: '30px',
+              padding: '25px',
+              background: `${COLORS.primary}05`,
+              borderRadius: '16px',
+              border: `2px solid ${COLORS.primary}10`
+            }}>
               <h3 style={{
-                fontSize: '16px',
-                fontWeight: '600',
-                color: COLORS.text,
-                marginBottom: '15px',
+                margin: '0 0 20px 0',
+                fontSize: '18px',
+                fontWeight: '700',
+                color: COLORS.primary,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '10px'
               }}>
-                <BarChart3 size={18} />
-                Statistik Kehadiran {selectedAnak.nama_lengkap}
+                <Clock size={20} />
+                Aksi Cepat
               </h3>
               
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                gap: '12px'
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '15px'
               }}>
+                <motion.button
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleAbsenMasuk}
+                  disabled={isSubmitting}
+                  style={{
+                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+                    color: COLORS.white,
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '10px',
+                    opacity: isSubmitting ? 0.7 : 1,
+                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <CheckCircle size={24} />
+                  <span>Absen Masuk</span>
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleAbsenPulang}
+                  disabled={isSubmitting}
+                  style={{
+                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+                    color: COLORS.white,
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '10px',
+                    opacity: isSubmitting ? 0.7 : 1,
+                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <Clock size={24} />
+                  <span>Absen Pulang</span>
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowIzinModal(true)}
+                  style={{
+                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+                    color: COLORS.white,
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '10px',
+                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <FileText size={24} />
+                  <span>Ajukan Izin</span>
+                </motion.button>
+              </div>
+            </div>
+          )}
+        </motion.div>
+
+        {selectedAnak && (
+          <>
+            {/* Statistics */}
+            {statistics && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                style={{
+                  background: COLORS.white,
+                  borderRadius: '20px',
+                  padding: '30px',
+                  marginBottom: '30px',
+                  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+                }}
+              >
                 <div style={{
-                  background: `${getStatusColor('hadir')}10`,
-                  border: `1px solid ${getStatusColor('hadir')}20`,
-                  borderRadius: '8px',
-                  padding: '12px',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  marginBottom: '30px'
                 }}>
-                  <div style={{
-                    fontSize: '18px',
+                  <h3 style={{
+                    fontSize: '24px',
                     fontWeight: '700',
-                    color: getStatusColor('hadir')
+                    color: COLORS.primary,
+                    margin: '0 0 10px 0'
                   }}>
-                    {statistics.hadir}
-                  </div>
-                  <div style={{
-                    fontSize: '11px',
+                    Statistik Kehadiran
+                  </h3>
+                  <p style={{
+                    fontSize: '16px',
                     color: '#666',
-                    fontWeight: '600'
+                    margin: 0
                   }}>
-                    Hadir
-                  </div>
+                    {selectedAnak.nama_lengkap}
+                  </p>
                 </div>
                 
                 <div style={{
-                  background: `${getStatusColor('alpa')}10`,
-                  border: `1px solid ${getStatusColor('alpa')}20`,
-                  borderRadius: '8px',
-                  padding: '12px',
-                  textAlign: 'center'
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                  gap: '20px',
+                  marginBottom: '30px'
                 }}>
-                  <div style={{
-                    fontSize: '18px',
-                    fontWeight: '700',
-                    color: getStatusColor('alpa')
-                  }}>
-                    {statistics.alpa}
-                  </div>
-                  <div style={{
-                    fontSize: '11px',
-                    color: '#666',
-                    fontWeight: '600'
-                  }}>
-                    Alpha
-                  </div>
+                  <motion.div
+                    whileHover={{ scale: 1.05, y: -5 }}
+                    style={{
+                      background: `${getStatusColor('hadir')}10`,
+                      border: `2px solid ${getStatusColor('hadir')}20`,
+                      borderRadius: '16px',
+                      padding: '25px 20px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <div style={{
+                      fontSize: '32px',
+                      fontWeight: '700',
+                      color: getStatusColor('hadir'),
+                      marginBottom: '10px'
+                    }}>
+                      {statistics.hadir}
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#666',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      Hadir
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div
+                    whileHover={{ scale: 1.05, y: -5 }}
+                    style={{
+                      background: `${getStatusColor('sakit')}10`,
+                      border: `2px solid ${getStatusColor('sakit')}20`,
+                      borderRadius: '16px',
+                      padding: '25px 20px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <div style={{
+                      fontSize: '32px',
+                      fontWeight: '700',
+                      color: getStatusColor('sakit'),
+                      marginBottom: '10px'
+                    }}>
+                      {statistics.sakit}
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#666',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      Sakit
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div
+                    whileHover={{ scale: 1.05, y: -5 }}
+                    style={{
+                      background: `${getStatusColor('izin')}10`,
+                      border: `2px solid ${getStatusColor('izin')}20`,
+                      borderRadius: '16px',
+                      padding: '25px 20px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <div style={{
+                      fontSize: '32px',
+                      fontWeight: '700',
+                      color: getStatusColor('izin'),
+                      marginBottom: '10px'
+                    }}>
+                      {statistics.izin}
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#666',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      Izin
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div
+                    whileHover={{ scale: 1.05, y: -5 }}
+                    style={{
+                      background: `${getStatusColor('alpa')}10`,
+                      border: `2px solid ${getStatusColor('alpa')}20`,
+                      borderRadius: '16px',
+                      padding: '25px 20px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <div style={{
+                      fontSize: '32px',
+                      fontWeight: '700',
+                      color: getStatusColor('alpa'),
+                      marginBottom: '10px'
+                    }}>
+                      {statistics.alpa}
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#666',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      Alpha
+                    </div>
+                  </motion.div>
                 </div>
                 
+                {/* Percentage highlight */}
                 <div style={{
-                  background: `${getStatusColor('sakit')}10`,
-                  border: `1px solid ${getStatusColor('sakit')}20`,
-                  borderRadius: '8px',
-                  padding: '12px',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  padding: '25px',
+                  background: `linear-gradient(135deg, ${COLORS.accent}15, ${COLORS.accent}05)`,
+                  borderRadius: '16px',
+                  border: `2px solid ${COLORS.accent}20`
                 }}>
                   <div style={{
-                    fontSize: '18px',
+                    fontSize: '48px',
                     fontWeight: '700',
-                    color: getStatusColor('sakit')
-                  }}>
-                    {statistics.sakit}
-                  </div>
-                  <div style={{
-                    fontSize: '11px',
-                    color: '#666',
-                    fontWeight: '600'
-                  }}>
-                    Sakit
-                  </div>
-                </div>
-                
-                <div style={{
-                  background: `${getStatusColor('izin')}10`,
-                  border: `1px solid ${getStatusColor('izin')}20`,
-                  borderRadius: '8px',
-                  padding: '12px',
-                  textAlign: 'center'
-                }}>
-                  <div style={{
-                    fontSize: '18px',
-                    fontWeight: '700',
-                    color: getStatusColor('izin')
-                  }}>
-                    {statistics.izin}
-                  </div>
-                  <div style={{
-                    fontSize: '11px',
-                    color: '#666',
-                    fontWeight: '600'
-                  }}>
-                    Izin
-                  </div>
-                </div>
-                
-                <div style={{
-                  background: `${COLORS.accent}10`,
-                  border: `1px solid ${COLORS.accent}30`,
-                  borderRadius: '8px',
-                  padding: '12px',
-                  textAlign: 'center'
-                }}>
-                  <div style={{
-                    fontSize: '18px',
-                    fontWeight: '700',
-                    color: COLORS.accent
+                    color: COLORS.accent,
+                    marginBottom: '8px'
                   }}>
                     {statistics.persentase_kehadiran}%
                   </div>
                   <div style={{
-                    fontSize: '11px',
+                    fontSize: '16px',
                     color: '#666',
                     fontWeight: '600'
                   }}>
-                    Kehadiran
+                    Tingkat Kehadiran
                   </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Filter Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            style={{
-              background: COLORS.white,
-              borderRadius: '16px',
-              padding: '20px',
-              marginBottom: '20px',
-              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
-            }}
-          >
-            {/* Filter Header */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: showCalendar ? '0px' : '20px'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <Filter size={20} color={COLORS.primary} />
-                <span style={{
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: COLORS.primary
-                }}>
-                  Filter Periode
-                </span>
-              </div>
-              
-              <button
-                onClick={() => setShowCalendar(!showCalendar)}
-                style={{
-                  background: COLORS.primary,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '10px 16px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <Calendar size={16} />
-                {dateRange[0].startDate.toLocaleDateString()} - {dateRange[0].endDate.toLocaleDateString()}
-              </button>
-            </div>
-
-            {showCalendar && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                style={{
-                  marginTop: '15px',
-                  display: 'flex',
-                  justifyContent: 'center'
-                }}
-              >
-                <div style={{
-                  background: '#fff',
-                  borderRadius: '12px',
-                  padding: '12px',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                  border: '1px solid #e5e7eb',
-                  maxWidth: '304px',
-                  overflow: 'hidden'
-                }}>
-                  <DateRange
-                    editableDateInputs={true}
-                    onChange={(ranges: any) => setDateRange([ranges.selection])}
-                    moveRangeOnFirstSelection={false}
-                    ranges={dateRange}
-                    maxDate={new Date()}
-                    rangeColors={[COLORS.primary]}
-                    className="compact-calendar"
-                  />
                 </div>
               </motion.div>
             )}
-          </motion.div>
 
-          {/* Search */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            style={{
-              background: COLORS.white,
-              borderRadius: '16px',
-              padding: '20px',
-              marginBottom: '20px',
-              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
-            }}
-          >
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              background: COLORS.gray[50],
-              borderRadius: '12px',
-              padding: '12px 16px'
-            }}>
-              <Search size={20} color={COLORS.gray[500]} />
-              <input
-                type="text"
-                placeholder="Cari berdasarkan tanggal atau status..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  outline: 'none',
-                  fontSize: '16px',
-                  color: COLORS.text,
-                  flex: 1
-                }}
-              />
-            </div>
-          </motion.div>
-
-          {/* Records List */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            style={{
-              background: COLORS.white,
-              borderRadius: '16px',
-              padding: '20px',
-              marginBottom: '20px',
-              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
-            }}
-          >
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '20px'
-            }}>
-              <h3 style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                color: COLORS.text,
-                margin: 0,
+            {/* Filter & Search Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              style={{
+                background: COLORS.white,
+                borderRadius: '20px',
+                padding: '30px',
+                marginBottom: '30px',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              <div style={{
                 display: 'flex',
+                justifyContent: 'space-between',
                 alignItems: 'center',
-                gap: '8px'
+                marginBottom: '25px'
               }}>
-                <BookOpen size={20} />
-                Riwayat Absensi
-              </h3>
-              
-              <button
-                onClick={loadAbsensiRecords}
-                disabled={isLoading}
-                style={{
-                  background: COLORS.primary,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 16px',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500',
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '700',
+                  color: COLORS.primary,
+                  margin: 0,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  opacity: isLoading ? 0.7 : 1
-                }}
-              >
-                <RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
-                Refresh
-              </button>
-            </div>
+                  gap: '10px'
+                }}>
+                  <Search size={22} />
+                  Filter & Pencarian
+                </h3>
+              </div>
 
-            {isLoading ? (
               <div style={{
                 display: 'flex',
-                justifyContent: 'center',
+                gap: '15px',
                 alignItems: 'center',
-                padding: '40px'
+                flexWrap: 'wrap'
               }}>
                 <div style={{
-                  width: '32px',
-                  height: '32px',
-                  border: '3px solid #f3f3f3',
-                  borderTop: '3px solid #3498db',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }} />
+                  position: 'relative',
+                  flex: 1,
+                  minWidth: '300px'
+                }}>
+                  <Search 
+                    size={20} 
+                    color="#999"
+                    style={{
+                      position: 'absolute',
+                      left: '15px',
+                      top: '50%',
+                      transform: 'translateY(-50%)'
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Cari berdasarkan tanggal atau status..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '15px 15px 15px 50px',
+                      border: `2px solid ${COLORS.primary}20`,
+                      borderRadius: '12px',
+                      fontSize: '16px',
+                      outline: 'none',
+                      transition: 'border-color 0.3s ease',
+                      fontFamily: 'inherit'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = COLORS.primary
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = `${COLORS.primary}20`
+                    }}
+                  />
+                </div>
+                
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowCalendar(!showCalendar)}
+                  style={{
+                    background: COLORS.primary,
+                    color: COLORS.white,
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '15px 25px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                    transition: 'all 0.3s ease',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  <Calendar size={18} />
+                  Filter Tanggal
+                </motion.button>
               </div>
-            ) : filteredRecords.length === 0 ? (
+
+              {showCalendar && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginTop: '25px' }}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <div style={{
+                    background: '#f8f9fa',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    border: `2px solid ${COLORS.primary}10`,
+                    maxWidth: '350px',
+                    overflow: 'hidden'
+                  }}>
+                    <DateRange
+                      editableDateInputs={true}
+                      onChange={(ranges: any) => setDateRange([ranges.selection])}
+                      moveRangeOnFirstSelection={false}
+                      ranges={dateRange}
+                      maxDate={new Date()}
+                      rangeColors={[COLORS.primary]}
+                      className="compact-calendar"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+
+            {/* Records List */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              style={{
+                background: COLORS.white,
+                borderRadius: '20px',
+                padding: '30px',
+                marginBottom: '30px',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+              }}
+            >
               <div style={{
-                textAlign: 'center',
-                padding: '40px',
-                color: COLORS.gray[500]
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '25px'
               }}>
-                <BookOpen size={48} color={COLORS.gray[400]} style={{ marginBottom: '12px' }} />
-                <p style={{ margin: 0, fontSize: '16px' }}>
-                  Tidak ada data absensi untuk periode ini
-                </p>
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '700',
+                  color: COLORS.primary,
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  <BookOpen size={22} />
+                  Riwayat Absensi
+                </h3>
+                
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={loadAbsensiRecords}
+                  disabled={isLoading}
+                  style={{
+                    background: isLoading 
+                      ? '#e2e8f0'
+                      : COLORS.primary,
+                    color: isLoading ? '#64748b' : COLORS.white,
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '12px 20px',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: isLoading 
+                      ? 'none'
+                      : '0 8px 25px rgba(0, 0, 0, 0.15)',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
+                  {isLoading ? 'Memuat...' : 'Refresh'}
+                </motion.button>
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {filteredRecords.map((record) => {
-                  const StatusIcon = getStatusIcon(record.status_kehadiran)
-                  
-                  return (
-                    <motion.div
-                      key={record.id}
-                      whileHover={{ scale: 1.02 }}
-                      style={{
-                        background: COLORS.gray[50],
-                        borderRadius: '12px',
-                        padding: '16px',
-                        border: '1px solid #e5e7eb',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => {
-                        loadDetailAbsensi(record.id)
-                      }}
-                    >
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
-                            background: `${getStatusColor(record.status_kehadiran)}20`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
+
+              {isLoading ? (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  padding: '80px 20px',
+                  flexDirection: 'column',
+                  gap: '20px'
+                }}>
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    border: '4px solid #e2e8f0',
+                    borderTop: `4px solid ${COLORS.primary}`,
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                  <p style={{
+                    color: '#64748b',
+                    fontSize: '16px',
+                    fontWeight: '500',
+                    margin: 0
+                  }}>
+                    Memuat data absensi...
+                  </p>
+                </div>
+              ) : filteredRecords.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '80px 20px',
+                  color: '#64748b'
+                }}>
+                  <BookOpen size={64} color="#cbd5e1" style={{ marginBottom: '20px' }} />
+                  <h4 style={{
+                    margin: '0 0 10px 0',
+                    fontSize: '20px',
+                    fontWeight: '600',
+                    color: '#475569'
+                  }}>
+                    Tidak ada data
+                  </h4>
+                  <p style={{ 
+                    margin: 0, 
+                    fontSize: '16px',
+                    color: '#64748b'
+                  }}>
+                    Belum ada riwayat absensi untuk periode ini
+                  </p>
+                </div>
+              ) : (
+                <div style={{ 
+                  display: 'grid',
+                  gap: '15px'
+                }}>
+                  {filteredRecords.map((record) => {
+                    const StatusIcon = getStatusIcon(record.status_kehadiran)
+                    
+                    return (
+                      <motion.div
+                        key={record.id}
+                        whileHover={{ scale: 1.01, y: -2 }}
+                        whileTap={{ scale: 0.99 }}
+                        style={{
+                          background: '#fafafa',
+                          borderRadius: '16px',
+                          padding: '25px',
+                          border: `2px solid ${COLORS.primary}10`,
+                          cursor: 'pointer',
+                          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.05)',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onClick={() => {
+                          loadDetailAbsensi(record.id)
+                        }}
+                      >
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}>
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '20px',
+                            flex: 1
                           }}>
-                            <StatusIcon size={20} color={getStatusColor(record.status_kehadiran)} />
-                          </div>
-                          
-                          <div>
                             <div style={{
-                              fontSize: '14px',
-                              fontWeight: '600',
-                              color: COLORS.text,
-                              marginBottom: '4px'
-                            }}>
-                              {new Date(record.tanggal).toLocaleDateString('id-ID', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              })}
-                            </div>
-                            
-                            <div style={{
-                              fontSize: '12px',
-                              color: COLORS.gray[600],
+                              width: '56px',
+                              height: '56px',
+                              borderRadius: '50%',
+                              background: `linear-gradient(135deg, ${getStatusColor(record.status_kehadiran)}, ${getStatusColor(record.status_kehadiran)}DD)`,
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '8px'
+                              justifyContent: 'center',
+                              boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)'
                             }}>
-                              <span style={{
-                                background: getStatusColor(record.status_kehadiran),
-                                color: 'white',
-                                padding: '2px 8px',
-                                borderRadius: '4px',
-                                fontSize: '10px',
-                                fontWeight: '600',
-                                textTransform: 'uppercase'
+                              <StatusIcon size={26} color={COLORS.white} />
+                            </div>
+                            
+                            <div style={{ flex: 1 }}>
+                              <div style={{
+                                fontSize: '18px',
+                                fontWeight: '700',
+                                color: COLORS.primary,
+                                marginBottom: '10px'
                               }}>
-                                {record.status_kehadiran}
-                              </span>
+                                {new Date(record.tanggal).toLocaleDateString('id-ID', {
+                                  weekday: 'long',
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </div>
                               
-                              {record.jam_masuk && (
-                                <span>Masuk: {record.jam_masuk}</span>
-                              )}
-                              
-                              {record.jam_pulang && (
-                                <span>Pulang: {record.jam_pulang}</span>
-                              )}
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '15px',
+                                flexWrap: 'wrap'
+                              }}>
+                                <span style={{
+                                  background: getStatusColor(record.status_kehadiran),
+                                  color: COLORS.white,
+                                  padding: '6px 16px',
+                                  borderRadius: '20px',
+                                  fontSize: '13px',
+                                  fontWeight: '700',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.5px'
+                                }}>
+                                  {record.status_kehadiran}
+                                </span>
+                                
+                                {record.jam_masuk && (
+                                  <span style={{
+                                    fontSize: '14px',
+                                    color: COLORS.primary,
+                                    background: '#f1f5f9',
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    fontWeight: '600'
+                                  }}>
+                                    Masuk: {record.jam_masuk}
+                                  </span>
+                                )}
+                                
+                                {record.jam_pulang && (
+                                  <span style={{
+                                    fontSize: '14px',
+                                    color: COLORS.primary,
+                                    background: '#f1f5f9',
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    fontWeight: '600'
+                                  }}>
+                                    Pulang: {record.jam_pulang}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
+                          
+                          <ChevronRight size={24} color={COLORS.primary} />
                         </div>
-                        
-                        <ChevronRight size={20} color={COLORS.gray[400]} />
-                      </div>
-                    </motion.div>
-                  )
-                })}
-              </div>
-            )}
-          </motion.div>
-        </>
-      )}
+                      </motion.div>
+                    )
+                  })}
+                </div>
+              )}
+            </motion.div>
+          </>
+        )}
+      </div>
 
       {/* Detail Modal */}
       <AttendanceDetailModal
@@ -1051,62 +1272,73 @@ export default function OrangTuaAttendancePage() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
+          background: 'rgba(15, 76, 92, 0.6)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           zIndex: 1000,
-          padding: '20px'
+          padding: '20px',
+          backdropFilter: 'blur(8px)'
         }}>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             style={{
-              background: 'white',
-              borderRadius: '16px',
-              padding: '24px',
+              background: COLORS.white,
+              borderRadius: '20px',
+              padding: '35px',
               maxWidth: '500px',
               width: '100%',
               maxHeight: '90vh',
-              overflow: 'auto'
+              overflow: 'auto',
+              boxShadow: '0 25px 50px rgba(15, 76, 92, 0.3)'
             }}
           >
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '20px'
+              marginBottom: '25px'
             }}>
               <h3 style={{
                 margin: 0,
-                fontSize: '18px',
-                fontWeight: '600',
-                color: COLORS.text
+                fontSize: '22px',
+                fontWeight: '700',
+                color: COLORS.primary
               }}>
                 Ajukan Izin untuk {selectedAnak?.nama_lengkap}
               </h3>
               
-              <button
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={() => setShowIzinModal(false)}
                 style={{
-                  background: 'none',
+                  background: '#e2e8f0',
                   border: 'none',
-                  fontSize: '20px',
+                  borderRadius: '50%',
+                  width: '44px',
+                  height: '44px',
+                  fontSize: '24px',
                   cursor: 'pointer',
-                  color: COLORS.gray[500]
+                  color: '#64748b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.3s ease'
                 }}
               >
                 ×
-              </button>
+              </motion.button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label style={{
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  color: COLORS.gray[700],
-                  marginBottom: '8px',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  color: COLORS.primary,
+                  marginBottom: '10px',
                   display: 'block'
                 }}>
                   Status Kehadiran
@@ -1119,10 +1351,12 @@ export default function OrangTuaAttendancePage() {
                   }))}
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '14px'
+                    padding: '15px',
+                    border: `2px solid ${COLORS.primary}20`,
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    outline: 'none',
+                    fontFamily: 'inherit'
                   }}
                 >
                   <option value="sakit">Sakit</option>
@@ -1132,10 +1366,10 @@ export default function OrangTuaAttendancePage() {
 
               <div>
                 <label style={{
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  color: COLORS.gray[700],
-                  marginBottom: '8px',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  color: COLORS.primary,
+                  marginBottom: '10px',
                   display: 'block'
                 }}>
                   Tanggal Awal
@@ -1149,20 +1383,22 @@ export default function OrangTuaAttendancePage() {
                   }))}
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '14px'
+                    padding: '15px',
+                    border: `2px solid ${COLORS.primary}20`,
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    outline: 'none',
+                    fontFamily: 'inherit'
                   }}
                 />
               </div>
 
               <div>
                 <label style={{
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  color: COLORS.gray[700],
-                  marginBottom: '8px',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  color: COLORS.primary,
+                  marginBottom: '10px',
                   display: 'block'
                 }}>
                   Tanggal Akhir
@@ -1176,20 +1412,22 @@ export default function OrangTuaAttendancePage() {
                   }))}
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '14px'
+                    padding: '15px',
+                    border: `2px solid ${COLORS.primary}20`,
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    outline: 'none',
+                    fontFamily: 'inherit'
                   }}
                 />
               </div>
 
               <div>
                 <label style={{
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  color: COLORS.gray[700],
-                  marginBottom: '8px',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  color: COLORS.primary,
+                  marginBottom: '10px',
                   display: 'block'
                 }}>
                   Keterangan
@@ -1201,24 +1439,26 @@ export default function OrangTuaAttendancePage() {
                     keterangan: e.target.value
                   }))}
                   placeholder="Masukkan alasan izin..."
-                  rows={3}
+                  rows={4}
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    resize: 'vertical'
+                    padding: '15px',
+                    border: `2px solid ${COLORS.primary}20`,
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    resize: 'vertical',
+                    outline: 'none',
+                    fontFamily: 'inherit'
                   }}
                 />
               </div>
 
               <div>
                 <label style={{
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  color: COLORS.gray[700],
-                  marginBottom: '8px',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  color: COLORS.primary,
+                  marginBottom: '10px',
                   display: 'block'
                 }}>
                   Bukti Surat (Opsional)
@@ -1232,60 +1472,69 @@ export default function OrangTuaAttendancePage() {
                   }))}
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '14px'
+                    padding: '15px',
+                    border: `2px solid ${COLORS.primary}20`,
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    outline: 'none',
+                    fontFamily: 'inherit'
                   }}
                 />
               </div>
 
               <div style={{
                 display: 'flex',
-                gap: '12px',
-                marginTop: '20px'
+                gap: '15px',
+                marginTop: '25px'
               }}>
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => setShowIzinModal(false)}
                   style={{
                     flex: 1,
-                    padding: '12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    background: 'white',
-                    color: COLORS.gray[700],
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
+                    padding: '16px',
+                    border: `2px solid ${COLORS.primary}20`,
+                    borderRadius: '12px',
+                    background: COLORS.white,
+                    color: COLORS.primary,
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
                   }}
                 >
                   Batal
-                </button>
+                </motion.button>
                 
-                <button
+                <motion.button
+                  whileHover={{ scale: isSubmitting || !izinForm.keterangan ? 1 : 1.02 }}
+                  whileTap={{ scale: isSubmitting || !izinForm.keterangan ? 1 : 0.98 }}
                   onClick={handleSubmitIzin}
                   disabled={isSubmitting || !izinForm.keterangan}
                   style={{
                     flex: 1,
-                    padding: '12px',
+                    padding: '16px',
                     border: 'none',
-                    borderRadius: '8px',
-                    background: COLORS.primary,
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: '600',
+                    borderRadius: '12px',
+                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primary}DD)`,
+                    color: COLORS.white,
+                    fontSize: '16px',
+                    fontWeight: '700',
                     cursor: isSubmitting || !izinForm.keterangan ? 'not-allowed' : 'pointer',
-                    opacity: isSubmitting || !izinForm.keterangan ? 0.5 : 1,
+                    opacity: isSubmitting || !izinForm.keterangan ? 0.6 : 1,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '8px'
+                    gap: '10px',
+                    boxShadow: '0 8px 25px rgba(15, 76, 92, 0.25)',
+                    transition: 'all 0.3s ease'
                   }}
                 >
                   {isSubmitting && (
                     <div style={{
-                      width: '16px',
-                      height: '16px',
+                      width: '20px',
+                      height: '20px',
                       border: '2px solid #ffffff40',
                       borderTop: '2px solid white',
                       borderRadius: '50%',
@@ -1293,12 +1542,22 @@ export default function OrangTuaAttendancePage() {
                     }} />
                   )}
                   Kirim Izin
-                </button>
+                </motion.button>
               </div>
             </div>
           </motion.div>
         </div>
       )}
+
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .spinning {
+          animation: spin 1s linear infinite;
+        }
+      `}</style>
     </div>
   )
 }
