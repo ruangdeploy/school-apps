@@ -5,6 +5,7 @@ import 'react-date-range/dist/styles.css'
 import 'react-date-range/dist/theme/default.css'
 import { motion } from 'framer-motion'
 import { absensiAPI, orangTuaAPI } from '../services/api'
+import AttendanceDetailModal from '../components/AttendanceDetailModal'
 import { 
   Calendar, 
   Clock, 
@@ -46,7 +47,11 @@ const AttendancePage: React.FC = () => {
   const [checkInTime, setCheckInTime] = useState<string | null>(null)
   const [checkOutTime, setCheckOutTime] = useState<string | null>(null)
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([])
+  const [attendanceStats, setAttendanceStats] = useState<any>({})
+  const [selectedDetail, setSelectedDetail] = useState<any>(null)
+  const [showDetailModal, setShowDetailModal] = useState(false)
   const [isLoadingRecords, setIsLoadingRecords] = useState(false)
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false)
   // Calendar filter state
   const [showCalendar, setShowCalendar] = useState(false)
   // Default: 5 days back from today
@@ -420,10 +425,18 @@ const AttendancePage: React.FC = () => {
         startDate.toISOString().split('T')[0],
         endDate.toISOString().split('T')[0]
       )
-      if (response.success && response.data && Array.isArray((response.data as any).riwayat)) {
-        setAttendanceRecords((response.data as any).riwayat)
+      
+      if (response.success && response.data) {
+        const data = response.data as any
+        if (Array.isArray(data.riwayat)) {
+          setAttendanceRecords(data.riwayat)
+        } else {
+          setAttendanceRecords([])
+        }
+        setAttendanceStats(data.statistik || {})
       } else {
         setAttendanceRecords([])
+        setAttendanceStats({})
       }
     } catch (error) {
       setAttendanceRecords([])
@@ -466,33 +479,25 @@ const AttendancePage: React.FC = () => {
     loadAttendanceRecords()
   }, [dateRange])
 
-  const viewAttendanceDetail = async (absensiId: number) => {
+  // Load detailed attendance record
+  const loadAttendanceDetail = async (absensiId: number) => {
     try {
+      setIsLoadingDetail(true)
       console.log('🔄 Loading attendance detail for ID:', absensiId)
+      
       const response = await absensiAPI.getAttendanceDetail(absensiId.toString())
       
       if (response.success && response.data) {
-        console.log('✅ Attendance detail loaded:', response.data)
-        
-        // Create a simple alert with detail info
-        const detail = response.data as any
-        const detailText = `
-Detail Absensi:
-Tanggal: ${new Date(detail.tanggal).toLocaleDateString('id-ID')}
-Status: ${detail.status_kehadiran}
-Waktu Masuk: ${detail.waktu_masuk || '-'}
-Waktu Pulang: ${detail.waktu_pulang || '-'}
-Keterangan: ${detail.keterangan || '-'}
-${detail.terlambat ? 'Status: Terlambat' : ''}
-        `.trim()
-        
-        alert(detailText)
+        setSelectedDetail(response.data)
+        setShowDetailModal(true)
       } else {
-        alert('Gagal memuat detail absensi: ' + response.message)
+        alert('❌ Gagal memuat detail absensi')
       }
     } catch (error) {
       console.error('❌ Error loading attendance detail:', error)
-      alert('Terjadi kesalahan saat memuat detail absensi')
+      alert('❌ Terjadi kesalahan saat memuat detail')
+    } finally {
+      setIsLoadingDetail(false)
     }
   }
 
@@ -1108,6 +1113,67 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
               {showCalendar ? 'Tutup Filter' : 'Filter Tanggal'}
             </motion.button>
           </div>
+          
+          {/* Statistics */}
+          {attendanceStats && Object.keys(attendanceStats).length > 0 && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+              gap: '12px',
+              marginBottom: '20px'
+            }}>
+              <div style={{
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: 'white',
+                padding: '15px',
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: '700' }}>{attendanceStats.hadir || 0}</div>
+                <div style={{ fontSize: '12px', opacity: 0.9 }}>Hadir</div>
+              </div>
+              <div style={{
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                color: 'white',
+                padding: '15px',
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: '700' }}>{attendanceStats.izin || 0}</div>
+                <div style={{ fontSize: '12px', opacity: 0.9 }}>Izin</div>
+              </div>
+              <div style={{
+                background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                color: 'white',
+                padding: '15px',
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: '700' }}>{attendanceStats.sakit || 0}</div>
+                <div style={{ fontSize: '12px', opacity: 0.9 }}>Sakit</div>
+              </div>
+              <div style={{
+                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                color: 'white',
+                padding: '15px',
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: '700' }}>{attendanceStats.alpa || 0}</div>
+                <div style={{ fontSize: '12px', opacity: 0.9 }}>Alpa</div>
+              </div>
+              <div style={{
+                background: `linear-gradient(135deg, ${COLORS.primary}, #1e40af)`,
+                color: 'white',
+                padding: '15px',
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: '700' }}>{attendanceStats.persentase_kehadiran || 0}%</div>
+                <div style={{ fontSize: '12px', opacity: 0.9 }}>Kehadiran</div>
+              </div>
+            </div>
+          )}
           {showCalendar && (
             <motion.div 
               initial={{ opacity: 0, height: 0, y: -20 }}
@@ -1155,29 +1221,27 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
               </div>
             ) : attendanceRecords.length > 0 ? (
               attendanceRecords.slice(0, 10).map((record, index) => {
-                // ...existing code...
+                // Update status logic based on actual API response
                 let status = 'unknown'
                 if (record.status_kehadiran === 'hadir') {
-                  if (record.terlambat || (record.waktu_masuk && record.waktu_masuk > '07:30:00')) {
-                    status = 'late'
-                  } else {
-                    status = 'present'
-                  }
-                } else if (record.status_kehadiran === 'alpha') {
+                  status = record.status_keterlambatan === 'telat' ? 'late' : 'present'
+                } else if (record.status_kehadiran === 'alpa') {
                   status = 'absent'
                 } else if (record.status_kehadiran === 'sakit') {
                   status = 'sick'
                 } else if (record.status_kehadiran === 'izin') {
                   status = 'permission'
                 }
+                
                 const StatusIcon = getStatusIcon(status)
                 const statusColor = getStatusColor(status)
-                const timeIn = record.jam_masuk
-                  ? record.jam_masuk
-                  : '-'
-                const timeOut = record.jam_pulang
-                  ? record.jam_pulang
-                  : '-'
+                const timeIn = record.jam_masuk || '-'
+                const timeOut = record.jam_pulang || '-'
+                const formattedDate = new Date(record.tanggal).toLocaleDateString('id-ID', {
+                  weekday: 'short',
+                  day: 'numeric',
+                  month: 'short'
+                })
                 return (
                   <motion.div
                     key={record.id || index}
@@ -1226,7 +1290,15 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
                           {getStatusText(status)}
                         </h4>
                         <div style={{
-                          display: 'flex',
+                          fontSize: '12px',
+                          color: '#666',
+                          fontWeight: '500'
+                        }}>
+                          {formattedDate} • {record.nama_kelas} - {record.jenjang}
+                        </div>
+                      </div>
+                      <div style={{
+                        display: 'flex',
                           gap: '15px',
                           alignItems: 'center'
                         }}>
@@ -1303,11 +1375,10 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
                           </div>
                         )}
                       </div>
-                    </div>
                     
                     {/* Detail Button */}
                     <motion.button
-                      onClick={() => viewAttendanceDetail(record.id)}
+                      onClick={() => loadAttendanceDetail(record.id)}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       style={{
@@ -1650,6 +1721,14 @@ ${detail.terlambat ? 'Status: Terlambat' : ''}
           }
         }
       `}</style>
+      
+      {/* Detail Modal */}
+      <AttendanceDetailModal
+        detail={selectedDetail}
+        isVisible={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        isLoading={isLoadingDetail}
+      />
     </div>
   )
 }
