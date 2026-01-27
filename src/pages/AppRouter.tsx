@@ -4,6 +4,7 @@ import MultiLoginPage from './MultiLoginPage'
 import HomePage from './HomePage'
 import AttendancePage from './AttendancePage'
 import GuruAttendancePage from './GuruAttendancePage'
+import OrangTuaAttendancePage from './OrangTuaAttendancePage'
 import SchedulePage from './SchedulePage'
 import AssignmentsPage from './AssignmentsPage'
 import GradesPage from './GradesPage'
@@ -20,6 +21,7 @@ const AppRouter: React.FC = () => {
         <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/guru/manage-attendance" element={<Navigate to="/guru/attendance" replace />} />
         <Route path="/guru/attendance" element={<GuruAttendancePage />} />
+        <Route path="/orang-tua/attendance" element={<OrangTuaAttendancePage />} />
         <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/assignments" element={<AssignmentsPage />} />
         <Route path="/grades" element={<GradesPage />} />

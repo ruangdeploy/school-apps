@@ -259,6 +259,30 @@ export const orangTuaAPI = {
   // Absensi pulang anak oleh orang tua  
   checkOutAnak: (formData: FormData) =>
     apiService.postFormData('/absensi/orang-tua/pulang', formData),
+    
+  // Absen masuk anak (simple POST)
+  absenMasuk: () =>
+    apiService.post('/absensi/orang-tua'),
+    
+  // Absen pulang anak (simple POST)
+  absenPulang: () =>
+    apiService.post('/absensi/orang-tua/pulang'),
+    
+  // Get daftar anak
+  getDaftarAnak: () =>
+    apiService.get('/siswa/anak'),
+    
+  // Get riwayat absensi anak
+  getRiwayatAbsensiAnak: (siswa_id: number, tanggal_awal: string, tanggal_akhir: string) =>
+    apiService.get(`/absensi/orang-tua/riwayat?siswa_id=${siswa_id}&tanggal_awal=${tanggal_awal}&tanggal_akhir=${tanggal_akhir}`),
+    
+  // Get detail absensi anak
+  getDetailAbsensiAnak: (absensi_id: number) =>
+    apiService.get(`/absensi/orang-tua/detail?absensi_id=${absensi_id}`),
+    
+  // Submit izin/sakit anak
+  submitIzinAnak: (data: FormData) =>
+    apiService.postFormData('/absensi/orang-tua/izin', data),
 }
 
 // Siswa APIs

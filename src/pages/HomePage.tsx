@@ -730,7 +730,7 @@ const HomePage: React.FC = () => {
                   subtitle: 'Lakukan absensi untuk anak dari mana saja',
                   icon: Clock,
                   color: COLORS.primary,
-                  action: () => window.location.href = '/attendance'
+                  action: () => window.location.href = '/orang-tua/attendance'
                 },
                 {
                   title: 'Profil Keluarga',
@@ -744,7 +744,7 @@ const HomePage: React.FC = () => {
                   subtitle: 'Lihat riwayat kehadiran anak',
                   icon: Calendar,
                   color: COLORS.primary,
-                  action: () => window.location.href = '/attendance'
+                  action: () => window.location.href = '/orang-tua/attendance'
                 },
                 {
                   title: 'Komunikasi',
