@@ -73,6 +73,7 @@ const GuruAttendancePage: React.FC = () => {
   const [siswaList, setSiswaList] = useState<Siswa[]>([])
   const [absensiRecords, setAbsensiRecords] = useState<AbsensiRecord[]>([])
   const [absensiStats, setAbsensiStats] = useState<any>({})
+  const [currentAbsensi, setCurrentAbsensi] = useState<{[key: number]: string}>({})
   
   // UI states
   const [isLoading, setIsLoading] = useState(false)
@@ -110,10 +111,18 @@ const GuruAttendancePage: React.FC = () => {
   useEffect(() => {
     if (currentView === 'kelas-detail' && selectedKelas) {
       loadSiswaList()
+      loadCurrentAbsensi()
     } else if (currentView === 'riwayat' && selectedKelas) {
       loadAbsensiHistory()
     }
   }, [currentView, selectedKelas])
+
+  // Reload data when date changes
+  useEffect(() => {
+    if (currentView === 'kelas-detail' && selectedKelas) {
+      loadCurrentAbsensi()
+    }
+  }, [selectedDate])
 
   // Reload history when date range changes
   useEffect(() => {
@@ -150,6 +159,35 @@ const GuruAttendancePage: React.FC = () => {
       alert('Gagal memuat daftar siswa')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const loadCurrentAbsensi = async () => {
+    if (!selectedKelas) return
+    try {
+      // Load absensi untuk tanggal yang dipilih
+      const response = await guruAPI.getRiwayatAbsensiKelas(
+        selectedKelas.id, 
+        selectedDate, 
+        selectedDate
+      )
+      
+      if (response.success) {
+        const data = response.data as any
+        const absensiData = data.absensi || []
+        
+        // Convert array ke object dengan siswa_id sebagai key
+        const currentStatus: {[key: number]: string} = {}
+        absensiData.forEach((item: AbsensiRecord) => {
+          currentStatus[item.siswa_id] = item.status_kehadiran
+        })
+        
+        setCurrentAbsensi(currentStatus)
+      }
+    } catch (error) {
+      console.error('Error loading current absensi:', error)
+      // Reset current absensi if error
+      setCurrentAbsensi({})
     }
   }
 
@@ -195,38 +233,6 @@ const GuruAttendancePage: React.FC = () => {
     }
   }
 
-  const updateStatusSiswa = async (siswaId: number, status: string) => {
-    try {
-      setIsSaving(true)
-      const response = await guruAPI.updateAbsensiSiswa({
-        siswa_id: siswaId,
-        tanggal: selectedDate,
-        status_kehadiran: status
-      })
-      
-      if (response.success) {
-        // Remove from pending updates
-        const newPending = { ...pendingUpdates }
-        delete newPending[siswaId]
-        setPendingUpdates(newPending)
-        
-        alert('Status absensi berhasil diupdate!')
-        
-        // Reload data if we're in history view
-        if (currentView === 'riwayat') {
-          loadAbsensiHistory()
-        }
-      } else {
-        alert('Gagal update status: ' + response.message)
-      }
-    } catch (error: any) {
-      console.error('Error updating status:', error)
-      alert('Terjadi kesalahan: ' + (error.message || 'Gagal update status'))
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
   const handleStatusChange = (siswaId: number, status: string) => {
     setPendingUpdates(prev => ({
       ...prev,
@@ -242,13 +248,34 @@ const GuruAttendancePage: React.FC = () => {
     }
 
     setIsSaving(true)
+    let successCount = 0
+    
     try {
       for (const [siswaId, status] of updates) {
-        await updateStatusSiswa(Number(siswaId), status)
+        const response = await guruAPI.updateAbsensiSiswa({
+          siswa_id: Number(siswaId),
+          tanggal: selectedDate,
+          status_kehadiran: status
+        })
+        
+        if (response.success) {
+          successCount++
+          // Update current absensi status
+          setCurrentAbsensi(prev => ({
+            ...prev,
+            [Number(siswaId)]: status
+          }))
+        }
       }
-      alert('Semua perubahan berhasil disimpan!')
+      
+      // Clear all pending updates
+      setPendingUpdates({})
+      
+      alert(`${successCount} dari ${updates.length} perubahan berhasil disimpan!`)
+      
     } catch (error) {
       console.error('Error saving updates:', error)
+      alert('Terjadi kesalahan saat menyimpan beberapa perubahan')
     } finally {
       setIsSaving(false)
     }
@@ -1056,6 +1083,7 @@ const GuruAttendancePage: React.FC = () => {
                 }}>
                   {filteredSiswa.map((siswa) => {
                     const pendingStatus = pendingUpdates[siswa.siswa_id]
+                    const currentStatus = currentAbsensi[siswa.siswa_id]
                     
                     return (
                       <motion.div
@@ -1105,10 +1133,33 @@ const GuruAttendancePage: React.FC = () => {
                               <p style={{
                                 fontSize: '14px',
                                 color: '#666',
-                                margin: 0
+                                margin: 0,
+                                marginBottom: '4px'
                               }}>
                                 NIS: {siswa.nis} • {siswa.jenis_kelamin}
                               </p>
+                              {currentStatus && (
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  fontSize: '12px',
+                                  color: getStatusColor(currentStatus),
+                                  fontWeight: '600'
+                                }}>
+                                  {React.createElement(getStatusIcon(currentStatus), { size: 12 })}
+                                  Status saat ini: {getStatusText(currentStatus)}
+                                </div>
+                              )}
+                              {!currentStatus && (
+                                <div style={{
+                                  fontSize: '12px',
+                                  color: '#999',
+                                  fontStyle: 'italic'
+                                }}>
+                                  Belum ada absensi untuk tanggal ini
+                                </div>
+                              )}
                             </div>
                           </div>
                           
