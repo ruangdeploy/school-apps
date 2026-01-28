@@ -547,7 +547,7 @@ export default function OrangTuaAttendancePage() {
                   onClick={() => setSelectedAnak(anak)}
                   style={{
                     background: selectedAnak?.siswa_id === anak.siswa_id 
-                      ? `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})` 
+                      ? `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primary})` 
                       : COLORS.white,
                     color: selectedAnak?.siswa_id === anak.siswa_id ? COLORS.white : COLORS.primary,
                     border: selectedAnak?.siswa_id === anak.siswa_id 
@@ -613,7 +613,7 @@ export default function OrangTuaAttendancePage() {
                   onClick={handleAbsenMasuk}
                   disabled={isSubmitting}
                   style={{
-                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primary})`,
                     color: COLORS.white,
                     border: 'none',
                     borderRadius: '12px',
@@ -640,7 +640,7 @@ export default function OrangTuaAttendancePage() {
                   onClick={handleAbsenPulang}
                   disabled={isSubmitting}
                   style={{
-                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primary})`,
                     color: COLORS.white,
                     border: 'none',
                     borderRadius: '12px',
@@ -666,7 +666,7 @@ export default function OrangTuaAttendancePage() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setShowIzinModal(true)}
                   style={{
-                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primary})`,
                     color: COLORS.white,
                     border: 'none',
                     borderRadius: '12px',
