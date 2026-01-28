@@ -197,6 +197,12 @@ export default function OrangTuaAttendancePage() {
   const [absensiRecords, setAbsensiRecords] = useState<AbsensiRecord[]>([])
   const [statistics, setStatistics] = useState<Statistics | null>(null)
   
+  // Attendance status states
+  const [todayCheckedIn, setTodayCheckedIn] = useState(false)
+  const [todayCheckedOut, setTodayCheckedOut] = useState(false)
+  const [checkInTime, setCheckInTime] = useState<string | null>(null)
+  const [checkOutTime, setCheckOutTime] = useState<string | null>(null)
+  
   // UI states
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -241,6 +247,7 @@ export default function OrangTuaAttendancePage() {
   useEffect(() => {
     if (selectedAnak) {
       loadAbsensiRecords()
+      loadTodayAttendance()
     }
   }, [selectedAnak, dateRange])
 
@@ -259,6 +266,60 @@ export default function OrangTuaAttendancePage() {
       console.error('Error loading daftar anak:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const loadTodayAttendance = async () => {
+    if (!selectedAnak) return
+    
+    try {
+      // Since getTodayAttendanceAnak might not exist, we can use the attendance records
+      // to check today's status by loading recent records and filtering for today
+      const today = new Date().toISOString().split('T')[0]
+      const response = await orangTuaAPI.getRiwayatAbsensiAnak(
+        selectedAnak.siswa_id,
+        today, // Start from today
+        today  // End at today
+      )
+      
+      if (response.success && response.data) {
+        const data = response.data as { riwayat: AbsensiRecord[]; statistik: Statistics }
+        const todayRecord = data.riwayat.find(record => 
+          record.tanggal === today && record.siswa_id === selectedAnak.siswa_id
+        )
+        
+        if (todayRecord) {
+          // Found today's record
+          if (todayRecord.jam_masuk) {
+            setTodayCheckedIn(true)
+            setCheckInTime(todayRecord.jam_masuk)
+          } else {
+            setTodayCheckedIn(false)
+            setCheckInTime(null)
+          }
+          
+          if (todayRecord.jam_pulang) {
+            setTodayCheckedOut(true)
+            setCheckOutTime(todayRecord.jam_pulang)
+          } else {
+            setTodayCheckedOut(false)
+            setCheckOutTime(null)
+          }
+        } else {
+          // No attendance record for today
+          setTodayCheckedIn(false)
+          setTodayCheckedOut(false)
+          setCheckInTime(null)
+          setCheckOutTime(null)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading today attendance:', error)
+      // Reset states on error
+      setTodayCheckedIn(false)
+      setTodayCheckedOut(false)
+      setCheckInTime(null)
+      setCheckOutTime(null)
     }
   }
 
@@ -289,15 +350,40 @@ export default function OrangTuaAttendancePage() {
   }
 
   const handleAbsenMasuk = async () => {
+    if (!selectedAnak) {
+      alert('Pilih anak terlebih dahulu')
+      return
+    }
+    
     try {
       setIsSubmitting(true)
-      const response = await orangTuaAPI.absenMasuk()
+      const response = await orangTuaAPI.absenMasuk(selectedAnak.siswa_id)
       
       if (response.success) {
-        alert('Absensi masuk berhasil!')
-        loadAbsensiRecords() // Refresh data
+        const absensiData = (response.data as any)?.absensi
+        
+        // Update UI immediately with response data or current time
+        setTodayCheckedIn(true)
+        setCheckInTime(absensiData?.jam_masuk || new Date().toLocaleTimeString('id-ID', {
+          hour: '2-digit',
+          minute: '2-digit'
+        }))
+        
+        alert(`✅ Absensi masuk ${selectedAnak.nama_lengkap} berhasil dicatat!`)
+        
+        // Refresh data with a small delay to ensure backend is updated
+        setTimeout(() => {
+          loadAbsensiRecords()
+          loadTodayAttendance()
+        }, 500)
       } else {
-        alert(response.message || 'Gagal melakukan absensi masuk')
+        if (response.message && response.message.includes('sudah melakukan absensi')) {
+          alert(`ℹ️ ${response.message}`)
+          // If already attended, refresh to get current status
+          loadTodayAttendance()
+        } else {
+          alert(response.message || 'Gagal melakukan absensi masuk')
+        }
       }
     } catch (error) {
       console.error('Error absen masuk:', error)
@@ -308,15 +394,40 @@ export default function OrangTuaAttendancePage() {
   }
 
   const handleAbsenPulang = async () => {
+    if (!selectedAnak) {
+      alert('Pilih anak terlebih dahulu')
+      return
+    }
+    
     try {
       setIsSubmitting(true)
-      const response = await orangTuaAPI.absenPulang()
+      const response = await orangTuaAPI.absenPulang(selectedAnak.siswa_id)
       
       if (response.success) {
-        alert('Absensi pulang berhasil!')
-        loadAbsensiRecords() // Refresh data
+        const absensiData = (response.data as any)?.absensi
+        
+        // Update UI immediately with response data or current time
+        setTodayCheckedOut(true)
+        setCheckOutTime(absensiData?.jam_pulang || new Date().toLocaleTimeString('id-ID', {
+          hour: '2-digit',
+          minute: '2-digit'
+        }))
+        
+        alert(`✅ Absensi pulang ${selectedAnak.nama_lengkap} berhasil dicatat!`)
+        
+        // Refresh data with a small delay to ensure backend is updated
+        setTimeout(() => {
+          loadAbsensiRecords()
+          loadTodayAttendance()
+        }, 500)
       } else {
-        alert(response.message || 'Gagal melakukan absensi pulang')
+        if (response.message && response.message.includes('sudah melakukan absensi')) {
+          alert(`ℹ️ ${response.message}`)
+          // If already attended, refresh to get current status
+          loadTodayAttendance()
+        } else {
+          alert(response.message || 'Gagal melakukan absensi pulang')
+        }
       }
     } catch (error) {
       console.error('Error absen pulang:', error)
@@ -475,7 +586,7 @@ export default function OrangTuaAttendancePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           style={{
-            background: COLORS.white,
+            background: COLORS.primary,
             borderRadius: '20px',
             padding: '30px',
             marginBottom: '30px',
@@ -491,27 +602,28 @@ export default function OrangTuaAttendancePage() {
             <div style={{
               width: '50px',
               height: '50px',
-              background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+              background: `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.white})`,
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <Heart size={24} color="white" />
+              <Heart size={24} color={COLORS.primary} />
             </div>
             <div>
               <h2 style={{
                 fontSize: '24px',
                 fontWeight: '700',
-                color: COLORS.primary,
+                color: COLORS.white,
                 margin: '0 0 5px 0'
               }}>
                 Kelola Absensi Anak
               </h2>
               <p style={{
                 fontSize: '14px',
-                color: '#666',
-                margin: 0
+                color: COLORS.white,
+                margin: 0,
+                opacity: 0.9
               }}>
                 Pilih anak untuk melihat dan mengelola kehadiran
               </p>
@@ -528,7 +640,7 @@ export default function OrangTuaAttendancePage() {
             <span style={{
               fontSize: '16px',
               fontWeight: '600',
-              color: COLORS.primary,
+              color: COLORS.white,
               minWidth: 'fit-content'
             }}>
               Pilih Anak:
@@ -547,12 +659,12 @@ export default function OrangTuaAttendancePage() {
                   onClick={() => setSelectedAnak(anak)}
                   style={{
                     background: selectedAnak?.siswa_id === anak.siswa_id 
-                      ? `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primary})` 
-                      : COLORS.white,
-                    color: selectedAnak?.siswa_id === anak.siswa_id ? COLORS.white : COLORS.primary,
+                      ? `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.white})` 
+                      : `${COLORS.white}20`,
+                    color: selectedAnak?.siswa_id === anak.siswa_id ? COLORS.primary : COLORS.white,
                     border: selectedAnak?.siswa_id === anak.siswa_id 
                       ? 'none' 
-                      : `2px solid ${COLORS.primary}20`,
+                      : `2px solid ${COLORS.white}30`,
                     borderRadius: '16px',
                     padding: '16px 24px',
                     cursor: 'pointer',
@@ -585,15 +697,102 @@ export default function OrangTuaAttendancePage() {
             <div style={{
               marginTop: '30px',
               padding: '25px',
-              background: `${COLORS.primary}05`,
+              background: `${COLORS.white}15`,
               borderRadius: '16px',
-              border: `2px solid ${COLORS.primary}10`
+              border: `2px solid ${COLORS.white}20`
             }}>
+              {/* Today's Attendance Status */}
+              <div style={{
+                marginBottom: '25px',
+                padding: '20px',
+                background: COLORS.white,
+                borderRadius: '12px',
+                border: `2px solid ${COLORS.primary}15`
+              }}>
+                <h4 style={{
+                  margin: '0 0 15px 0',
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  color: COLORS.primary,
+                  textAlign: 'center'
+                }}>
+                  Status Absensi Hari Ini - {selectedAnak.nama_lengkap}
+                </h4>
+                
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '15px'
+                }}>
+                  {/* Check In Status */}
+                  <div style={{
+                    padding: '15px',
+                    borderRadius: '10px',
+                    background: todayCheckedIn ? '#10b98115' : '#f3f4f6',
+                    border: `2px solid ${todayCheckedIn ? '#10b981' : '#e5e7eb'}`,
+                    textAlign: 'center'
+                  }}>
+                    <CheckCircle 
+                      size={28} 
+                      color={todayCheckedIn ? '#10b981' : '#9ca3af'} 
+                      style={{ marginBottom: '8px' }}
+                    />
+                    <div style={{
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      color: todayCheckedIn ? '#10b981' : '#6b7280',
+                      textTransform: 'uppercase',
+                      marginBottom: '5px'
+                    }}>
+                      Absen Masuk
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: todayCheckedIn ? '#059669' : '#9ca3af'
+                    }}>
+                      {todayCheckedIn ? checkInTime : 'Belum Absen'}
+                    </div>
+                  </div>
+
+                  {/* Check Out Status */}
+                  <div style={{
+                    padding: '15px',
+                    borderRadius: '10px',
+                    background: todayCheckedOut ? '#10b98115' : '#f3f4f6',
+                    border: `2px solid ${todayCheckedOut ? '#10b981' : '#e5e7eb'}`,
+                    textAlign: 'center'
+                  }}>
+                    <Clock 
+                      size={28} 
+                      color={todayCheckedOut ? '#10b981' : '#9ca3af'} 
+                      style={{ marginBottom: '8px' }}
+                    />
+                    <div style={{
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      color: todayCheckedOut ? '#10b981' : '#6b7280',
+                      textTransform: 'uppercase',
+                      marginBottom: '5px'
+                    }}>
+                      Absen Pulang
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: todayCheckedOut ? '#059669' : '#9ca3af'
+                    }}>
+                      {todayCheckedOut ? checkOutTime : 'Belum Absen'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
               <h3 style={{
                 margin: '0 0 20px 0',
                 fontSize: '18px',
                 fontWeight: '700',
-                color: COLORS.primary,
+                color: COLORS.white,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px'
@@ -608,57 +807,73 @@ export default function OrangTuaAttendancePage() {
                 gap: '15px'
               }}>
                 <motion.button
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: todayCheckedIn || isSubmitting ? 1 : 1.02, y: todayCheckedIn || isSubmitting ? 0 : -2 }}
+                  whileTap={{ scale: todayCheckedIn || isSubmitting ? 1 : 0.98 }}
                   onClick={handleAbsenMasuk}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || todayCheckedIn}
                   style={{
-                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primary})`,
+                    background: (isSubmitting || todayCheckedIn) 
+                      ? '#9ca3af' 
+                      : `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
                     color: COLORS.white,
                     border: 'none',
                     borderRadius: '12px',
                     padding: '20px',
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    cursor: (isSubmitting || todayCheckedIn) ? 'not-allowed' : 'pointer',
                     fontSize: '14px',
                     fontWeight: '600',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: '10px',
-                    opacity: isSubmitting ? 0.7 : 1,
-                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                    opacity: (isSubmitting || todayCheckedIn) ? 0.7 : 1,
+                    boxShadow: (isSubmitting || todayCheckedIn) 
+                      ? 'none'
+                      : '0 8px 25px rgba(0, 0, 0, 0.15)',
                     transition: 'all 0.3s ease'
                   }}
                 >
                   <CheckCircle size={24} />
-                  <span>Absen Masuk</span>
+                  <span>{todayCheckedIn ? 'Sudah Absen Masuk' : isSubmitting ? 'Memproses...' : 'Absen Masuk'}</span>
                 </motion.button>
 
                 <motion.button
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: (todayCheckedOut || !todayCheckedIn || isSubmitting) ? 1 : 1.02, y: (todayCheckedOut || !todayCheckedIn || isSubmitting) ? 0 : -2 }}
+                  whileTap={{ scale: (todayCheckedOut || !todayCheckedIn || isSubmitting) ? 1 : 0.98 }}
                   onClick={handleAbsenPulang}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || todayCheckedOut || !todayCheckedIn}
                   style={{
-                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primary})`,
+                    background: (isSubmitting || todayCheckedOut || !todayCheckedIn) 
+                      ? '#9ca3af' 
+                      : `linear-gradient(135deg, ${COLORS.accent}, #d97706)`,
                     color: COLORS.white,
                     border: 'none',
                     borderRadius: '12px',
                     padding: '20px',
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    cursor: (isSubmitting || todayCheckedOut || !todayCheckedIn) ? 'not-allowed' : 'pointer',
                     fontSize: '14px',
                     fontWeight: '600',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: '10px',
-                    opacity: isSubmitting ? 0.7 : 1,
-                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                    opacity: (isSubmitting || todayCheckedOut || !todayCheckedIn) ? 0.7 : 1,
+                    boxShadow: (isSubmitting || todayCheckedOut || !todayCheckedIn) 
+                      ? 'none'
+                      : '0 8px 25px rgba(0, 0, 0, 0.15)',
                     transition: 'all 0.3s ease'
                   }}
                 >
                   <Clock size={24} />
-                  <span>Absen Pulang</span>
+                  <span>
+                    {todayCheckedOut 
+                      ? 'Sudah Absen Pulang' 
+                      : !todayCheckedIn 
+                      ? 'Absen Masuk Dulu'
+                      : isSubmitting 
+                      ? 'Memproses...' 
+                      : 'Absen Pulang'}
+                  </span>
                 </motion.button>
 
                 <motion.button
@@ -666,7 +881,7 @@ export default function OrangTuaAttendancePage() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setShowIzinModal(true)}
                   style={{
-                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primary})`,
+                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
                     color: COLORS.white,
                     border: 'none',
                     borderRadius: '12px',
@@ -685,6 +900,26 @@ export default function OrangTuaAttendancePage() {
                   <FileText size={24} />
                   <span>Ajukan Izin</span>
                 </motion.button>
+              </div>
+              
+              {/* Info Text */}
+              <div style={{
+                marginTop: '20px',
+                textAlign: 'center',
+                fontSize: '14px',
+                color: COLORS.white,
+                fontStyle: 'italic',
+                padding: '15px',
+                background: `${COLORS.white}10`,
+                borderRadius: '10px',
+                border: `1px solid ${COLORS.white}20`
+              }}>
+                {!todayCheckedIn ? 
+                  '📱 Sebagai orang tua, Anda dapat melakukan absensi anak dari lokasi manapun tanpa perlu foto. Klik "Absen Masuk" untuk mencatat kehadiran anak.' :
+                  !todayCheckedOut ?
+                  '✅ Absensi masuk sudah tercatat. Klik "Absen Pulang" untuk mencatat waktu pulang anak.' :
+                  '🎉 Absensi hari ini sudah lengkap. Terima kasih telah membantu mencatat kehadiran anak!'
+                }
               </div>
             </div>
           )}

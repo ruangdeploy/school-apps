@@ -266,13 +266,13 @@ export const orangTuaAPI = {
   checkOutAnak: (formData: FormData) =>
     apiService.postFormData('/absensi/orang-tua/pulang', formData),
     
-  // Absen masuk anak (simple POST)
-  absenMasuk: () =>
-    apiService.post('/absensi/orang-tua'),
+  // Absen masuk anak (simple POST with siswa_id and status_kehadiran)
+  absenMasuk: (siswa_id: number) =>
+    apiService.post('/absensi/orang-tua', { siswa_id, status_kehadiran: 'hadir' }),
     
-  // Absen pulang anak (simple POST)
-  absenPulang: () =>
-    apiService.post('/absensi/orang-tua/pulang'),
+  // Absen pulang anak (simple POST with siswa_id)
+  absenPulang: (siswa_id: number) =>
+    apiService.post('/absensi/orang-tua/pulang', { siswa_id }),
     
   // Get daftar anak
   getDaftarAnak: () =>
