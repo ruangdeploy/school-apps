@@ -80,17 +80,29 @@ const HomePage: React.FC = () => {
     // Load user data from localStorage
     const userData = localStorage.getItem('userData')
     if (userData) {
-      setUser(JSON.parse(userData))
+      const parsedUser = JSON.parse(userData)
+      setUser(parsedUser)
+      
+      // Only load attendance data for non-parent users
+      if (parsedUser.tipe_user !== 'orang_tua') {
+        loadTodayAttendance()
+        loadAttendanceStats()
+      } else {
+        console.log('ℹ️ Parent user detected, skipping attendance API calls')
+      }
     }
-
-    // Load today's attendance
-    loadTodayAttendance()
-    loadAttendanceStats()
 
     return () => clearInterval(timer)
   }, [])
 
   const loadTodayAttendance = async () => {
+    // Skip API call for parents as they don't have personal attendance
+    if (user?.tipe_user === 'orang_tua') {
+      console.log('ℹ️ Skipping attendance load for parent user')
+      setTodayAttendance(null)
+      return
+    }
+
     try {
       console.log('🔄 Loading today\'s attendance...')
       const response = await absensiAPI.getTodayAttendance()
@@ -109,6 +121,18 @@ const HomePage: React.FC = () => {
   }
 
   const loadAttendanceStats = async () => {
+    // Skip API call for parents as they don't have personal attendance stats
+    if (user?.tipe_user === 'orang_tua') {
+      console.log('ℹ️ Skipping attendance stats for parent user')
+      setStats({
+        totalHadir: 0,
+        totalTerlambat: 0,
+        totalAlpha: 0,
+        persentaseKehadiran: 0
+      })
+      return
+    }
+
     try {
       console.log('🔄 Loading attendance statistics...')
       
