@@ -353,7 +353,7 @@ const AttendanceDetailModal: React.FC<AttendanceDetailModalProps> = ({
                               Foto Masuk
                             </div>
                             <img
-                              src={`http://localhost:3000/${detail.foto_evidence_masuk}`}
+                              src={detail.foto_evidence_masuk_url}
                               alt="Evidence Masuk"
                               style={{
                                 width: '100%',
@@ -381,7 +381,7 @@ const AttendanceDetailModal: React.FC<AttendanceDetailModalProps> = ({
                               Foto Pulang
                             </div>
                             <img
-                              src={`http://localhost:3000/${detail.foto_evidence_pulang}`}
+                              src={detail.foto_evidence_pulang_url}
                               alt="Evidence Pulang"
                               style={{
                                 width: '100%',
