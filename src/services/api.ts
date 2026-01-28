@@ -9,6 +9,12 @@ console.log('🌍 Environment:', import.meta.env.MODE)
 console.log('📋 All Vite Env:', import.meta.env)
 
 class ApiService {
+    async patch<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
+      return this.request<T>(endpoint, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      })
+    }
   private baseURL: string
 
   constructor(baseURL: string) {
@@ -312,7 +318,7 @@ export const guruAPI = {
     
   // Update absensi siswa oleh guru
   updateAbsensiSiswa: (data: { siswa_id: number; tanggal: string; status_kehadiran: string }) =>
-    apiService.post('/absensi/guru/update', data),
+    apiService.patch('/absensi/guru/update', data),
     
   // Get riwayat absensi kelas
   getRiwayatAbsensiKelas: (kelas_id: number, tanggal_awal: string, tanggal_akhir: string) =>
