@@ -16,8 +16,7 @@ import {
   MapPin,
   Camera,
   RotateCcw,
-  LogIn,
-  LogOut
+  ChevronRight
 } from 'lucide-react'
 
 // Color palette constants - same as login page
@@ -1071,15 +1070,15 @@ const AttendancePage: React.FC = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           style={{
             background: COLORS.white,
-            borderRadius: '20px',
-            padding: '30px',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+            borderRadius: '16px',
+            padding: '20px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <h3 style={{
-              fontSize: '24px',
-              fontWeight: '700',
+              fontSize: '20px',
+              fontWeight: '600',
               color: COLORS.primary,
               margin: 0
             }}>
@@ -1095,10 +1094,10 @@ const AttendancePage: React.FC = () => {
                   : `linear-gradient(135deg, ${COLORS.primary}, #1e40af)`,
                 color: 'white',
                 border: 'none',
-                borderRadius: '12px',
-                padding: '12px 20px',
+                borderRadius: '10px',
+                padding: '10px 16px',
                 fontWeight: 600,
-                fontSize: '14px',
+                fontSize: '13px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -1114,63 +1113,63 @@ const AttendancePage: React.FC = () => {
             </motion.button>
           </div>
           
-          {/* Statistics */}
+          {/* Statistics - More Compact */}
           {attendanceStats && Object.keys(attendanceStats).length > 0 && (
-            <div style={{
+            <div className="statistics-grid" style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-              gap: '12px',
-              marginBottom: '20px'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
+              gap: '8px',
+              marginBottom: '16px'
             }}>
-              <div style={{
+              <div className="stat-card" style={{
                 background: 'linear-gradient(135deg, #10b981, #059669)',
                 color: 'white',
-                padding: '15px',
-                borderRadius: '12px',
+                padding: '10px',
+                borderRadius: '8px',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '24px', fontWeight: '700' }}>{attendanceStats.hadir || 0}</div>
-                <div style={{ fontSize: '12px', opacity: 0.9 }}>Hadir</div>
+                <div className="stat-number" style={{ fontSize: '18px', fontWeight: '700' }}>{attendanceStats.hadir || 0}</div>
+                <div className="stat-label" style={{ fontSize: '10px', opacity: 0.9 }}>Hadir</div>
               </div>
-              <div style={{
+              <div className="stat-card" style={{
                 background: 'linear-gradient(135deg, #f59e0b, #d97706)',
                 color: 'white',
-                padding: '15px',
-                borderRadius: '12px',
+                padding: '10px',
+                borderRadius: '8px',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '24px', fontWeight: '700' }}>{attendanceStats.izin || 0}</div>
-                <div style={{ fontSize: '12px', opacity: 0.9 }}>Izin</div>
+                <div className="stat-number" style={{ fontSize: '18px', fontWeight: '700' }}>{attendanceStats.izin || 0}</div>
+                <div className="stat-label" style={{ fontSize: '10px', opacity: 0.9 }}>Izin</div>
               </div>
-              <div style={{
+              <div className="stat-card" style={{
                 background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
                 color: 'white',
-                padding: '15px',
-                borderRadius: '12px',
+                padding: '10px',
+                borderRadius: '8px',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '24px', fontWeight: '700' }}>{attendanceStats.sakit || 0}</div>
-                <div style={{ fontSize: '12px', opacity: 0.9 }}>Sakit</div>
+                <div className="stat-number" style={{ fontSize: '18px', fontWeight: '700' }}>{attendanceStats.sakit || 0}</div>
+                <div className="stat-label" style={{ fontSize: '10px', opacity: 0.9 }}>Sakit</div>
               </div>
-              <div style={{
+              <div className="stat-card" style={{
                 background: 'linear-gradient(135deg, #ef4444, #dc2626)',
                 color: 'white',
-                padding: '15px',
-                borderRadius: '12px',
+                padding: '10px',
+                borderRadius: '8px',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '24px', fontWeight: '700' }}>{attendanceStats.alpa || 0}</div>
-                <div style={{ fontSize: '12px', opacity: 0.9 }}>Alpa</div>
+                <div className="stat-number" style={{ fontSize: '18px', fontWeight: '700' }}>{attendanceStats.alpa || 0}</div>
+                <div className="stat-label" style={{ fontSize: '10px', opacity: 0.9 }}>Alpa</div>
               </div>
-              <div style={{
+              <div className="stat-card" style={{
                 background: `linear-gradient(135deg, ${COLORS.primary}, #1e40af)`,
                 color: 'white',
-                padding: '15px',
-                borderRadius: '12px',
+                padding: '10px',
+                borderRadius: '8px',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '24px', fontWeight: '700' }}>{attendanceStats.persentase_kehadiran || 0}%</div>
-                <div style={{ fontSize: '12px', opacity: 0.9 }}>Kehadiran</div>
+                <div className="stat-number" style={{ fontSize: '18px', fontWeight: '700' }}>{attendanceStats.persentase_kehadiran || 0}%</div>
+                <div className="stat-label" style={{ fontSize: '10px', opacity: 0.9 }}>Kehadiran</div>
               </div>
             </div>
           )}
@@ -1207,7 +1206,7 @@ const AttendancePage: React.FC = () => {
           <div style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px'
+            gap: '8px'
           }}>
             {isLoadingRecords ? (
               <div style={{
@@ -1248,154 +1247,90 @@ const AttendancePage: React.FC = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
-                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileHover={{ scale: 1.02 }}
+                    onClick={() => loadAttendanceDetail(record.id)}
+                    className="attendance-record"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '20px',
-                      padding: '20px',
-                      background: `linear-gradient(135deg, ${COLORS.white} 0%, ${statusColor}05 100%)`,
-                      borderRadius: '16px',
-                      border: `2px solid ${statusColor}20`,
-                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                      gap: '15px',
+                      padding: '15px',
+                      background: COLORS.white,
+                      borderRadius: '12px',
+                      border: `1px solid ${statusColor}30`,
+                      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
                       cursor: 'pointer',
-                      transition: 'all 0.3s ease'
+                      transition: 'all 0.2s ease'
                     }}
                   >
-                    <div style={{
-                      width: '60px',
-                      height: '60px',
-                      background: `linear-gradient(135deg, ${statusColor}, ${statusColor}CC)`,
-                      borderRadius: '16px',
+                    {/* Status Icon - Smaller */}
+                    <div className="attendance-icon" style={{
+                      width: '40px',
+                      height: '40px',
+                      background: statusColor,
+                      borderRadius: '10px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: `0 4px 15px ${statusColor}30`
+                      justifyContent: 'center'
                     }}>
-                      <StatusIcon size={28} color="white" />
+                      <StatusIcon size={20} color="white" />
                     </div>
+
+                    {/* Main Info */}
                     <div style={{ flex: 1 }}>
                       <div style={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        marginBottom: '8px'
+                        marginBottom: '4px'
                       }}>
                         <h4 style={{
-                          fontSize: '16px',
+                          fontSize: '14px',
                           fontWeight: '600',
                           color: COLORS.primary,
                           margin: 0
                         }}>
                           {getStatusText(status)}
                         </h4>
-                        <div style={{
+                        <span style={{
                           fontSize: '12px',
                           color: '#666',
                           fontWeight: '500'
                         }}>
-                          {formattedDate} • {record.nama_kelas} - {record.jenjang}
-                        </div>
+                          {formattedDate}
+                        </span>
                       </div>
-                      <div style={{
-                        display: 'flex',
-                          gap: '15px',
-                          alignItems: 'center'
-                        }}>
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            background: '#10b98115',
-                            padding: '8px 12px',
-                            borderRadius: '10px',
-                            border: '1px solid #10b981'
-                          }}>
-                            <LogIn size={16} color="#10b981" />
-                            <span style={{
-                              fontSize: '14px',
-                              fontWeight: '600',
-                              color: '#10b981'
-                            }}>
-                              {timeIn}
-                            </span>
-                          </div>
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            background: timeOut !== '-' ? '#ef444415' : '#9ca3af15',
-                            padding: '8px 12px',
-                            borderRadius: '10px',
-                            border: `1px solid ${timeOut !== '-' ? '#ef4444' : '#9ca3af'}`
-                          }}>
-                            <LogOut size={16} color={timeOut !== '-' ? '#ef4444' : '#9ca3af'} />
-                            <span style={{
-                              fontSize: '14px',
-                              fontWeight: '600',
-                              color: timeOut !== '-' ? '#ef4444' : '#9ca3af'
-                            }}>
-                              {timeOut}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{
+                      
+                      {/* Simple Time Display */}
+                      <div className="attendance-time" style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '15px',
-                        fontSize: '14px',
+                        gap: '10px',
+                        fontSize: '12px',
                         color: '#666'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <Calendar size={14} />
-                          {new Date(record.tanggal).toLocaleDateString('id-ID')}
-                        </div>
-                        {record.keterangan && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                            <MapPin size={14} />
-                            {record.keterangan}
-                          </div>
-                        )}
+                        <span>Masuk: <strong>{timeIn}</strong></span>
+                        <span>•</span>
+                        <span>Pulang: <strong>{timeOut}</strong></span>
                         {record.status_keterlambatan === 'telat' && (
-                          <div style={{
-                            background: `linear-gradient(135deg, ${COLORS.accent}, #e67e22)`,
-                            color: 'white',
-                            padding: '6px 12px',
-                            borderRadius: '16px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            boxShadow: `0 2px 8px ${COLORS.accent}30`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}>
-                            <AlertCircle size={12} />
-                            Terlambat
-                          </div>
+                          <>
+                            <span>•</span>
+                            <span style={{ color: COLORS.accent, fontWeight: '600' }}>Terlambat</span>
+                          </>
                         )}
                       </div>
-                    
-                    {/* Detail Button */}
-                    <motion.button
-                      onClick={() => loadAttendanceDetail(record.id)}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      style={{
-                        background: `linear-gradient(135deg, ${statusColor}, ${statusColor}CC)`,
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '12px',
-                        padding: '12px 16px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        boxShadow: `0 4px 15px ${statusColor}30`,
-                        transition: 'all 0.3s ease'
-                      }}
-                    >
-                      Detail
-                    </motion.button>
+                    </div>
+
+                    {/* Arrow Icon */}
+                    <div style={{
+                      width: '24px',
+                      height: '24px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <ChevronRight size={16} color="#999" />
+                    </div>
                   </motion.div>
                 )
               })
@@ -1715,9 +1650,47 @@ const AttendancePage: React.FC = () => {
         }
         
         /* Simple responsive styling */
+        @media (max-width: 768px) {
+          .attendance-record {
+            padding: 12px !important;
+            gap: 12px !important;
+          }
+          
+          .attendance-icon {
+            width: 32px !important;
+            height: 32px !important;
+          }
+          
+          .statistics-grid {
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)) !important;
+            gap: 6px !important;
+          }
+          
+          .stat-card {
+            padding: 8px !important;
+          }
+          
+          .stat-number {
+            font-size: 16px !important;
+          }
+          
+          .stat-label {
+            font-size: 9px !important;
+          }
+        }
+        
         @media (max-width: 480px) {
           .rdrCalendarWrapper {
             width: 100% !important;
+          }
+          
+          .attendance-record {
+            padding: 10px !important;
+            gap: 10px !important;
+          }
+          
+          .attendance-time {
+            font-size: 11px !important;
           }
         }
       `}</style>
