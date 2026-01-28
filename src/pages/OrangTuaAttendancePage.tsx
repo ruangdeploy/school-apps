@@ -586,7 +586,7 @@ export default function OrangTuaAttendancePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           style={{
-            background: COLORS.primary,
+            background: COLORS.white,
             borderRadius: '20px',
             padding: '30px',
             marginBottom: '30px',
@@ -602,28 +602,27 @@ export default function OrangTuaAttendancePage() {
             <div style={{
               width: '50px',
               height: '50px',
-              background: `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.white})`,
+              background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <Heart size={24} color={COLORS.primary} />
+              <Heart size={24} color="white" />
             </div>
             <div>
               <h2 style={{
                 fontSize: '24px',
                 fontWeight: '700',
-                color: COLORS.white,
+                color: COLORS.primary,
                 margin: '0 0 5px 0'
               }}>
                 Kelola Absensi Anak
               </h2>
               <p style={{
                 fontSize: '14px',
-                color: COLORS.white,
-                margin: 0,
-                opacity: 0.9
+                color: '#666',
+                margin: 0
               }}>
                 Pilih anak untuk melihat dan mengelola kehadiran
               </p>
@@ -640,7 +639,7 @@ export default function OrangTuaAttendancePage() {
             <span style={{
               fontSize: '16px',
               fontWeight: '600',
-              color: COLORS.white,
+              color: COLORS.primary,
               minWidth: 'fit-content'
             }}>
               Pilih Anak:
@@ -659,12 +658,12 @@ export default function OrangTuaAttendancePage() {
                   onClick={() => setSelectedAnak(anak)}
                   style={{
                     background: selectedAnak?.siswa_id === anak.siswa_id 
-                      ? `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.white})` 
-                      : `${COLORS.white}20`,
-                    color: selectedAnak?.siswa_id === anak.siswa_id ? COLORS.primary : COLORS.white,
+                      ? COLORS.primary 
+                      : COLORS.white,
+                    color: selectedAnak?.siswa_id === anak.siswa_id ? COLORS.white : COLORS.primary,
                     border: selectedAnak?.siswa_id === anak.siswa_id 
                       ? 'none' 
-                      : `2px solid ${COLORS.white}30`,
+                      : `2px solid ${COLORS.primary}20`,
                     borderRadius: '16px',
                     padding: '16px 24px',
                     cursor: 'pointer',
@@ -697,9 +696,9 @@ export default function OrangTuaAttendancePage() {
             <div style={{
               marginTop: '30px',
               padding: '25px',
-              background: `${COLORS.white}15`,
+              background: `${COLORS.primary}05`,
               borderRadius: '16px',
-              border: `2px solid ${COLORS.white}20`
+              border: `2px solid ${COLORS.primary}10`
             }}>
               {/* Today's Attendance Status */}
               <div style={{
@@ -792,7 +791,7 @@ export default function OrangTuaAttendancePage() {
                 margin: '0 0 20px 0',
                 fontSize: '18px',
                 fontWeight: '700',
-                color: COLORS.white,
+                color: COLORS.primary,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px'
@@ -814,7 +813,7 @@ export default function OrangTuaAttendancePage() {
                   style={{
                     background: (isSubmitting || todayCheckedIn) 
                       ? '#9ca3af' 
-                      : `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+                      : `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primary})`,
                     color: COLORS.white,
                     border: 'none',
                     borderRadius: '12px',
@@ -845,7 +844,7 @@ export default function OrangTuaAttendancePage() {
                   style={{
                     background: (isSubmitting || todayCheckedOut || !todayCheckedIn) 
                       ? '#9ca3af' 
-                      : `linear-gradient(135deg, ${COLORS.accent}, #d97706)`,
+                      : `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primary})`,
                     color: COLORS.white,
                     border: 'none',
                     borderRadius: '12px',
@@ -881,7 +880,7 @@ export default function OrangTuaAttendancePage() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setShowIzinModal(true)}
                   style={{
-                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
+                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.primary})`,
                     color: COLORS.white,
                     border: 'none',
                     borderRadius: '12px',
@@ -907,12 +906,12 @@ export default function OrangTuaAttendancePage() {
                 marginTop: '20px',
                 textAlign: 'center',
                 fontSize: '14px',
-                color: COLORS.white,
+                color: '#374151',
                 fontStyle: 'italic',
                 padding: '15px',
-                background: `${COLORS.white}10`,
+                background: `${COLORS.white}90`,
                 borderRadius: '10px',
-                border: `1px solid ${COLORS.white}20`
+                border: `1px solid ${COLORS.primary}20`
               }}>
                 {!todayCheckedIn ? 
                   '📱 Sebagai orang tua, Anda dapat melakukan absensi anak dari lokasi manapun tanpa perlu foto. Klik "Absen Masuk" untuk mencatat kehadiran anak.' :
