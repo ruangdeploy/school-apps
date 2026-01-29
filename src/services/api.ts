@@ -258,6 +258,9 @@ export const absensiAPI = {
 
 // Orang Tua APIs - untuk absensi anak
 export const orangTuaAPI = {
+    // Get jadwal anak by siswa_id and hari
+    getJadwalByHari: (siswa_id: number, hari: string) =>
+      apiService.get(`/jadwal/orang-tua?siswa_id=${siswa_id}&hari=${encodeURIComponent(hari)}`),
   // Absensi masuk anak oleh orang tua
   checkInAnak: (formData: FormData) =>
     apiService.postFormData('/absensi/orang-tua', formData),
@@ -295,12 +298,16 @@ export const orangTuaAPI = {
 export const siswaAPI = {
   getProfile: () =>
     apiService.get('/siswa/profile'),
-  
+
   getNilai: () =>
     apiService.get('/siswa/nilai'),
-    
+
   getJadwal: () =>
     apiService.get('/siswa/jadwal'),
+
+  // Get jadwal siswa by hari (Senin, Selasa, ...)
+  getJadwalByHari: (hari: string) =>
+    apiService.get(`/jadwal/siswa?hari=${encodeURIComponent(hari)}`),
 }
 
 // Guru APIs  

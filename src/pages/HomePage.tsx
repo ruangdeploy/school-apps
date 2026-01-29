@@ -764,6 +764,13 @@ const HomePage: React.FC = () => {
                   action: () => window.location.href = '/profile'
                 },
                 {
+                  title: 'Jadwal',
+                  subtitle: 'Lihat jadwal pelajaran anak',
+                  icon: Calendar,
+                  color: COLORS.primary,
+                  action: () => window.location.href = '/schedule'
+                },
+                {
                   title: 'Riwayat Absensi',
                   subtitle: 'Lihat riwayat kehadiran anak',
                   icon: Calendar,
