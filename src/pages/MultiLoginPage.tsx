@@ -48,7 +48,8 @@ const MultiLoginPage: React.FC = () => {
     
     try {
       // Call backend API
-      const directResponse = await fetch('http://localhost:3000/api/auth/login', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+      const directResponse = await fetch(`${apiBaseUrl}/auth/login`, {
         method: 'POST',
         mode: 'cors',
         credentials: 'omit',

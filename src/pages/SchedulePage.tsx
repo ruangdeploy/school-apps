@@ -121,9 +121,6 @@ const SchedulePage: React.FC = () => {
     }
   }
 
-  const getTypeColor = (type: string) => {
-    return type === 'Ekstrakurikuler' ? COLORS.accent : COLORS.primary
-  }
 
   return (
     <div style={{

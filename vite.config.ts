@@ -4,6 +4,13 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { resolve } from 'path'
 
 export default defineConfig({
+  server: {
+    host: '0.0.0.0',
+    port: 5173
+  },
+  preview: {
+    allowedHosts: ['3149-114-124-237-4.ngrok-free.app']
+  },
   plugins: [
     react(),
     VitePWA({
@@ -51,8 +58,8 @@ export default defineConfig({
         scope: '/',
         icons: [
           {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
             type: 'image/png'
           },
           {
