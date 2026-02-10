@@ -277,132 +277,38 @@ const HomePage: React.FC = () => {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: `linear-gradient(135deg, ${COLORS.primary} 0%, rgba(244, 163, 0, 0.1) 100%)`,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-    }}>
+    <div className="home-bg">
       {/* Header */}
-      <div style={{
-        background: COLORS.white,
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 10
-      }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '0 20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          height: '70px'
-        }}>
+      <div className="home-header">
+        <div className="home-header-inner">
           {/* Logo */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              background: `linear-gradient(45deg, ${COLORS.primary}, ${COLORS.accent})`,
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              marginRight: '15px',
-              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)'
-            }}>
+          <div className="home-logo-wrap">
+            <div className="home-logo">
               <BookOpen size={24} />
             </div>
-            <h1 style={{
-              fontSize: '24px',
-              fontWeight: '700',
-              color: COLORS.primary,
-              margin: 0
-            }}>
+            <h1 className="home-title">
               School App
             </h1>
           </div>
 
           {/* User Menu */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '15px'
-          }}>
+          <div className="home-header-menu">
             <button
               onClick={() => window.location.href = '/profile'}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '8px 15px',
-                background: `${COLORS.primary}10`,
-                borderRadius: '25px',
-                border: `1px solid ${COLORS.primary}20`,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = `${COLORS.primary}20`
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = `${COLORS.primary}10`
-              }}
+              className="home-header-profile-btn"
             >
-              <div style={{
-                width: '35px',
-                height: '35px',
-                background: `linear-gradient(45deg, ${COLORS.primary}, ${COLORS.accent})`,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 'bold'
-              }}>
+              <div className="home-header-profile-avatar">
                 {userInfo.name?.charAt(0) || 'U'}
               </div>
               <div>
-                <div style={{
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: COLORS.primary
-                }}>
-                  {userInfo.name}
-                </div>
-                <div style={{
-                  fontSize: '12px',
-                  color: '#666'
-                }}>
-                  {userInfo.role} - {userInfo.class}
-                </div>
+                <div className="home-header-profile-name">{userInfo.name}</div>
+                <div className="home-header-profile-role">{userInfo.role} - {userInfo.class}</div>
               </div>
             </button>
             
             <button
               onClick={handleLogout}
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: `1px solid ${COLORS.primary}20`,
-                color: COLORS.primary,
-                padding: '0.75rem 1.5rem',
-                borderRadius: '1rem',
-                cursor: 'pointer',
-                fontWeight: '500',
-                fontSize: '0.9rem',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = `${COLORS.primary}10`
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.2)'
-              }}
+              className="home-header-logout-btn"
             >
               Logout
             </button>
@@ -411,42 +317,19 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '30px 20px'
-      }}>
+      <div className="home-main">
         {/* Welcome Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          style={{
-            background: COLORS.white,
-            borderRadius: '20px',
-            padding: '30px',
-            marginBottom: '30px',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-            display: 'grid',
-            gridTemplateColumns: '1fr auto',
-            alignItems: 'center',
-            gap: '30px'
-          }}
+          className="home-welcome-card"
         >
           <div>
-            <h2 style={{
-              fontSize: '28px',
-              fontWeight: '700',
-              color: COLORS.primary,
-              margin: '0 0 10px 0'
-            }}>
+            <h2 className="home-welcome-title">
               Selamat Datang, {userInfo.name}! 👋
             </h2>
-            <p style={{
-              fontSize: '16px',
-              color: '#666',
-              margin: '0 0 20px 0'
-            }}>
+            <p className="home-welcome-desc">
               {user?.tipe_user === 'siswa' 
                 ? 'Semoga hari ini menjadi hari yang produktif untuk belajar dan berkembang.'
                 : user?.tipe_user === 'guru'
@@ -456,40 +339,20 @@ const HomePage: React.FC = () => {
                 : 'Semoga hari ini menjadi hari yang produktif.'
               }
             </p>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '20px',
-              fontSize: '14px',
-              color: '#888'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="home-welcome-meta">
+              <div className="home-welcome-meta-item">
                 <Calendar size={16} />
                 {formatDate(currentTime)}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="home-welcome-meta-item">
                 <Clock size={16} />
                 {formatTime(currentTime)}
               </div>
             </div>
           </div>
           
-          <div style={{
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '120px',
-              height: '120px',
-              background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent})`,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '48px',
-              fontWeight: 'bold',
-              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
-            }}>
+          <div className="home-welcome-avatar-wrap">
+            <div className="home-welcome-avatar">
               {userInfo.name?.charAt(0) || 'U'}
             </div>
           </div>
@@ -500,18 +363,11 @@ const HomePage: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          style={{
-            background: todayAttendance?.waktu_masuk ? '#10b981' : COLORS.accent,
-            color: COLORS.white,
-            borderRadius: '20px',
-            padding: '25px',
-            marginBottom: '30px',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
-          }}
+          className={`home-attendance-card${todayAttendance?.waktu_masuk ? ' home-attendance-success' : ' home-attendance-warning'}`}
         >
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
-            <CheckCircle size={28} style={{ marginRight: '12px' }} />
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>
+          <div className="home-attendance-header">
+            <CheckCircle size={28} className="home-attendance-header-icon" />
+            <h3 className="home-attendance-title">
               {user?.tipe_user === 'siswa' 
                 ? 'Status Absensi Hari Ini'
                 : user?.tipe_user === 'guru'
@@ -525,31 +381,31 @@ const HomePage: React.FC = () => {
           
           {user?.tipe_user === 'orang_tua' ? (
             <div>
-              <p style={{ margin: '10px 0', fontSize: '16px' }}>
+              <p className="home-attendance-desc">
                 👨‍👩‍👧‍👦 Anda dapat melakukan absensi untuk anak dari lokasi manapun
               </p>
-              <p style={{ margin: '10px 0', fontSize: '16px', opacity: 0.9 }}>
+              <p className="home-attendance-desc home-attendance-desc-secondary">
                 📱 Gunakan menu Absensi untuk mencatat kehadiran anak Anda
               </p>
             </div>
           ) : todayAttendance ? (
             <div>
-              <p style={{ margin: '10px 0', fontSize: '16px' }}>
+              <p className="home-attendance-desc">
                 ✅ Sudah absen masuk: {formatDateTime(todayAttendance.waktu_masuk)}
               </p>
               {todayAttendance.waktu_pulang && (
-                <p style={{ margin: '10px 0', fontSize: '16px' }}>
+                <p className="home-attendance-desc">
                   ✅ Sudah absen pulang: {formatDateTime(todayAttendance.waktu_pulang)}
                 </p>
               )}
               {!todayAttendance.waktu_pulang && (
-                <p style={{ margin: '10px 0', fontSize: '16px', opacity: 0.9 }}>
+                <p className="home-attendance-desc home-attendance-desc-secondary">
                   ⏰ Jangan lupa absen pulang nanti
                 </p>
               )}
             </div>
           ) : (
-            <p style={{ margin: 0, fontSize: '16px' }}>
+            <p className="home-attendance-desc home-attendance-desc-empty">
               {user?.tipe_user === 'guru'
                 ? '⏰ Belum melakukan absensi hari ini'
                 : '⏰ Belum melakukan absensi hari ini'
@@ -563,12 +419,7 @@ const HomePage: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '20px',
-            marginBottom: '30px'
-          }}
+          className="home-stats-grid"
         >
           {(() => {
             let statsData = []
@@ -659,59 +510,21 @@ const HomePage: React.FC = () => {
             return statsData.map((stat, index) => (
             <div
               key={index}
-              style={{
-                background: COLORS.white,
-                borderRadius: '15px',
-                padding: '25px',
-                boxShadow: '0 5px 20px rgba(0, 0, 0, 0.08)',
-                border: `1px solid ${stat.color}20`
-              }}
+              className="home-stat-card"
+              data-color={stat.color}
             >
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: '15px'
-              }}>
-                <div style={{
-                  width: '50px',
-                  height: '50px',
-                  background: `${stat.color}15`,
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
+              <div className="home-stat-card-header">
+                <div className="home-stat-card-icon" data-color={stat.color}>
                   <stat.icon size={24} color={stat.color} />
                 </div>
                 {stat.percentage && (
-                  <div style={{
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    color: stat.color,
-                    background: `${stat.color}10`,
-                    padding: '4px 8px',
-                    borderRadius: '6px'
-                  }}>
+                  <div className="home-stat-card-percentage" data-color={stat.color}>
                     {stat.percentage}%
                   </div>
                 )}
               </div>
-              <h3 style={{
-                fontSize: '24px',
-                fontWeight: '700',
-                color: COLORS.primary,
-                margin: '0 0 5px 0'
-              }}>
-                {stat.value}
-              </h3>
-              <p style={{
-                fontSize: '14px',
-                color: '#666',
-                margin: 0
-              }}>
-                {stat.subtitle}
-              </p>
+              <h3 className="home-stat-value">{stat.value}</h3>
+              <p className="home-stat-subtitle">{stat.subtitle}</p>
             </div>
           ))
           })()}
@@ -722,28 +535,10 @@ const HomePage: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          style={{
-            background: COLORS.white,
-            borderRadius: '20px',
-            padding: '30px',
-            marginBottom: '30px',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
-          }}
+          className="home-menu-card"
         >
-          <h3 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: COLORS.primary,
-            margin: '0 0 20px 0'
-          }}>
-            Menu Utama
-          </h3>
-          
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '20px'
-        }}>
+          <h3 className="home-menu-title">Menu Utama</h3>
+        <div className="home-menu-grid">
           {(() => {
             let menuItems = []
             
@@ -854,56 +649,15 @@ const HomePage: React.FC = () => {
             <button
               key={index}
               onClick={action.action}
-              style={{
-                background: `${action.color}08`,
-                border: `2px solid ${action.color}20`,
-                borderRadius: '15px',
-                padding: '20px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                textAlign: 'left',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = `${action.color}15`
-                e.currentTarget.style.borderColor = `${action.color}40`
-                e.currentTarget.style.transform = 'translateY(-2px)'
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = `${action.color}08`
-                e.currentTarget.style.borderColor = `${action.color}20`
-                e.currentTarget.style.transform = 'translateY(0)'
-              }}
+              className="home-menu-btn"
+              data-color={action.color}
             >
-              <div style={{
-                width: '50px',
-                height: '50px',
-                background: `${action.color}15`,
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: '15px'
-              }}>
+              <div className="home-menu-icon" data-color={action.color}>
                 <action.icon size={24} color={action.color} />
               </div>
-              <div style={{ flex: 1 }}>
-                <h4 style={{
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  color: COLORS.primary,
-                  margin: '0 0 5px 0'
-                }}>
-                  {action.title}
-                </h4>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#666',
-                  margin: 0
-                }}>
-                  {action.subtitle}
-                </p>
+              <div className="home-menu-content">
+                <h4 className="home-menu-action-title">{action.title}</h4>
+                <p className="home-menu-action-subtitle">{action.subtitle}</p>
               </div>
               <ChevronRight size={20} color={action.color} />
             </button>
@@ -917,26 +671,10 @@ const HomePage: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          style={{
-            background: COLORS.white,
-            borderRadius: '20px',
-            padding: '30px',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
-          }}
+          className="home-activity-card"
         >
-          <h3 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: COLORS.primary,
-            margin: '0 0 20px 0'
-          }}>
-            Aktivitas Terbaru
-          </h3>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '15px'
-          }}>
+          <h3 className="home-activity-title">Aktivitas Terbaru</h3>
+          <div className="home-activity-list">
             {(() => {
               let activities = []
               
@@ -1028,51 +766,15 @@ const HomePage: React.FC = () => {
               return activities.map((activity, index) => (
               <div
                 key={index}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '15px',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '12px',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#f9fafb'
-                  e.currentTarget.style.borderColor = activity.color + '40'
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent'
-                  e.currentTarget.style.borderColor = '#e5e7eb'
-                }}
+                className="home-activity-item"
+                data-color={activity.color}
               >
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  background: `${activity.color}15`,
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: '15px'
-                }}>
+                <div className="home-activity-icon" data-color={activity.color}>
                   <activity.icon size={20} color={activity.color} />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <h4 style={{
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    color: COLORS.primary,
-                    margin: '0 0 4px 0'
-                  }}>
-                    {activity.title}
-                  </h4>
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#666',
-                    margin: 0
-                  }}>
-                    {activity.time}
-                  </p>
+                <div className="home-activity-content">
+                  <h4 className="home-activity-item-title">{activity.title}</h4>
+                  <p className="home-activity-item-time">{activity.time}</p>
                 </div>
               </div>
             ))

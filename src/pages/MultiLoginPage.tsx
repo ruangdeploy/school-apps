@@ -93,49 +93,13 @@ const MultiLoginPage: React.FC = () => {
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh',
-      background: `linear-gradient(135deg, ${COLORS.primary} 0%, rgba(244, 163, 0, 0.9) 100%)`,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      transition: 'background 0.3s ease'
-    }}>
+    <div className="login-bg">
       {/* Background Animation Elements */}
-      <div style={{
-        position: 'absolute',
-        top: '10%',
-        left: '10%',
-        width: '100px',
-        height: '100px',
-        background: `rgba(244, 163, 0, 0.2)`,
-        borderRadius: '50%',
-        animation: 'float 4s ease-in-out infinite'
-      }}></div>
-      
-      <div style={{
-        position: 'absolute',
-        bottom: '20%',
-        right: '15%',
-        width: '150px',
-        height: '150px',
-        background: `rgba(255, 255, 255, 0.1)`,
-        borderRadius: '50%',
-        animation: 'float 6s ease-in-out infinite reverse'
-      }}></div>
+      <div className="login-bg-float login-bg-float-1"></div>
+      <div className="login-bg-float login-bg-float-2"></div>
 
       {/* Main Login Container */}
-      <div style={{
-        maxWidth: '500px',
-        width: '100%',
-        background: 'rgba(255, 255, 255, 0.95)',
-        borderRadius: '20px',
-        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
-        overflow: 'hidden',
-        minHeight: '600px'
-      }}>
+      <div className="login-card">
         
         {/* Login Form */}
         <div style={{
@@ -322,34 +286,7 @@ const MultiLoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              style={{
-                width: '100%',
-                padding: '16px',
-                background: isLoading 
-                  ? '#9ca3af' 
-                  : `linear-gradient(45deg, ${COLORS.primary}, ${COLORS.accent})`,
-                color: 'white',
-                border: 'none',
-                borderRadius: '12px',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-                marginBottom: '20px'
-              }}
-              onMouseOver={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.3)'
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)'
-                }
-              }}
+              className={`login-btn${isLoading ? ' login-btn-loading' : ''}`}
             >
               {isLoading ? (
                 <div style={{
