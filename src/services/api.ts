@@ -308,6 +308,10 @@ export const siswaAPI = {
   // Get jadwal siswa by hari (Senin, Selasa, ...)
   getJadwalByHari: (hari: string) =>
     apiService.get(`/jadwal/siswa?hari=${encodeURIComponent(hari)}`),
+
+  // Get jadwal ujian siswa by tanggal range
+  getJadwalUjian: (tanggal_mulai: string, tanggal_selesai: string) =>
+    apiService.get(`/jadwal/siswa/ujian?tanggal_mulai=${encodeURIComponent(tanggal_mulai)}&tanggal_selesai=${encodeURIComponent(tanggal_selesai)}`),
 }
 
 // Guru APIs  

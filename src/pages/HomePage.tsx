@@ -566,6 +566,13 @@ const HomePage: React.FC = () => {
                   action: () => window.location.href = '/schedule'
                 },
                 {
+                  title: 'Jadwal Ujian',
+                  subtitle: 'Lihat jadwal ujian anak',
+                  icon: Calendar,
+                  color: COLORS.accent,
+                  action: () => window.location.href = '/exam-schedule'
+                },
+                {
                   title: 'Riwayat Absensi',
                   subtitle: 'Lihat riwayat kehadiran anak',
                   icon: Calendar,
@@ -604,6 +611,13 @@ const HomePage: React.FC = () => {
                   action: () => window.location.href = '/schedule'
                 },
                 {
+                  title: 'Jadwal Ujian',
+                  subtitle: 'Lihat jadwal ujian',
+                  icon: Calendar,
+                  color: COLORS.accent,
+                  action: () => window.location.href = '/exam-schedule'
+                },
+                {
                   title: 'Tugas & Penilaian',
                   subtitle: 'Kelola tugas dan nilai siswa',
                   icon: BookOpen,
@@ -634,6 +648,13 @@ const HomePage: React.FC = () => {
                   icon: Calendar,
                   color: COLORS.primary,
                   action: () => window.location.href = '/schedule'
+                },
+                {
+                  title: 'Jadwal Ujian',
+                  subtitle: 'Lihat jadwal ujian',
+                  icon: Calendar,
+                  color: COLORS.accent,
+                  action: () => window.location.href = '/exam-schedule'
                 },
                 {
                   title: 'Tugas',
