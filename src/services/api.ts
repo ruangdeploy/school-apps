@@ -342,6 +342,10 @@ export const guruAPI = {
   // Get detail absensi siswa untuk guru
   getDetailAbsensiSiswa: (absensi_id: number) =>
     apiService.get(`/absensi/guru/detail?absensi_id=${absensi_id}`),
+
+  // Get jadwal ujian guru
+  getJadwalUjian: (siswa_id: number, tanggal_mulai: string, tanggal_selesai: string) =>
+    apiService.get(`/jadwal/guru/ujian?siswa_id=${siswa_id}&tanggal_mulai=${tanggal_mulai}&tanggal_selesai=${tanggal_selesai}`),
     
   // Old endpoints (keep for compatibility)
   getAbsensiKelas: (kelas_id: string, tanggal?: string) =>

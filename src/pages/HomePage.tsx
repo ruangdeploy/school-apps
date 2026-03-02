@@ -803,6 +803,13 @@ const HomePage: React.FC = () => {
                   action: () => window.location.href = '/guru/attendance'
                 },
                 {
+                  title: 'Jadwal Ujian Siswa',
+                  subtitle: 'Pantau jadwal ujian dan kelola ujian siswa',
+                  icon: FileText,
+                  color: '#dc2626',
+                  action: () => window.location.href = '/guru/exams'
+                },
+                {
                   title: 'Absensi Pribadi',
                   subtitle: 'Catat kehadiran Anda sebagai guru',
                   icon: Users,
