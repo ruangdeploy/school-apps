@@ -292,6 +292,10 @@ export const orangTuaAPI = {
   // Submit izin/sakit anak
   submitIzinAnak: (data: FormData) =>
     apiService.postFormData('/absensi/orang-tua/izin', data),
+
+  // Get jadwal ujian anak
+  getJadwalUjianAnak: (siswa_id: number, tanggal_mulai: string, tanggal_selesai: string) =>
+    apiService.get(`/jadwal/orang-tua/ujian?siswa_id=${siswa_id}&tanggal_mulai=${tanggal_mulai}&tanggal_selesai=${tanggal_selesai}`),
 }
 
 // Siswa APIs

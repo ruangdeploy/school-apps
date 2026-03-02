@@ -758,6 +758,13 @@ const HomePage: React.FC = () => {
                   action: () => window.location.href = '/orang-tua/attendance'
                 },
                 {
+                  title: 'Jadwal Ujian Anak',
+                  subtitle: 'Pantau jadwal ujian dan bantu persiapan',
+                  icon: FileText,
+                  color: '#dc2626',
+                  action: () => window.location.href = '/orang-tua/exams'
+                },
+                {
                   title: 'Profil Keluarga',
                   subtitle: 'Kelola informasi keluarga dan anak',
                   icon: Users,

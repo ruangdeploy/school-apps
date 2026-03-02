@@ -12,6 +12,7 @@ import ProfilePage from './ProfilePage'
 import TestBackendPage from './TestBackendPage'
 import DebugLoginPage from './DebugLoginPage'
 import ExamPage from './ExamPage'
+import OrangTuaExamPage from './OrangTuaExamPage'
 
 const AppRouter: React.FC = () => {
   return (
@@ -21,6 +22,7 @@ const AppRouter: React.FC = () => {
         <Route path="/home" element={<HomePage />} />
         <Route path="/attendance" element={<AttendancePage />} />
         <Route path="/exams" element={<ExamPage />} />
+        <Route path="/orang-tua/exams" element={<OrangTuaExamPage />} />
         <Route path="/guru/manage-attendance" element={<Navigate to="/guru/attendance" replace />} />
         <Route path="/guru/attendance" element={<GuruAttendancePage />} />
         <Route path="/orang-tua/attendance" element={<OrangTuaAttendancePage />} />
