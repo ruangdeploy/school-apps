@@ -75,11 +75,12 @@ interface ExamData {
 }
 
 interface Anak {
-  id: number
+  siswa_id: number
   nama_lengkap: string
   nis: string
   nisn: string
   nama_kelas: string
+  jenjang: string
   is_primary?: boolean
 }
 
@@ -101,78 +102,26 @@ const OrangTuaExamPage: React.FC = () => {
   // Load exam data when selectedAnak changes
   useEffect(() => {
     if (selectedAnak) {
-      console.log('🎯 Selected anak changed, loading exam data:', selectedAnak)
       loadExamData()
     }
   }, [selectedAnak])
 
-  // Test function for getDaftarAnak API call
-  const testGetDaftarAnak = async () => {
-    try {
-      console.log('🧪 Testing getDaftarAnak API call...')
-      console.log('🧪 User type check:', JSON.parse(localStorage.getItem('userData') || '{}').tipe_user)
-      
-      const response = await orangTuaAPI.getDaftarAnak()
-      console.log('🧪 getDaftarAnak test response:', response)
-      
-      if (response.success && response.data) {
-        console.log('✅ getDaftarAnak test successful!')
-        console.log('📋 Data received:', response.data)
-        
-        const anakList = Array.isArray(response.data) ? response.data : []
-        setDaftarAnak(anakList)
-        
-        if (anakList.length > 0) {
-          setSelectedAnak(anakList[0])
-          console.log('👶 First child set as selected:', anakList[0])
-        }
-      } else {
-        console.log('❌ getDaftarAnak test failed:', response.message)
-      }
-    } catch (error) {
-      console.error('❌ getDaftarAnak test error:', error)
-    }
-  }
-
   const loadDaftarAnak = async () => {
     try {
-      console.log('🔄 Loading daftar anak...')
-      console.log('🔍 Current user data:', localStorage.getItem('userData'))
-      console.log('🔍 Current access token:', localStorage.getItem('accessToken') ? 'Present' : 'Missing')
-      
       const response = await orangTuaAPI.getDaftarAnak()
-      console.log('📋 Daftar anak raw response:', response)
       
       if (response.success && response.data) {
-        console.log('📋 Response data:', response.data)
-        console.log('📋 Is response.data an array?', Array.isArray(response.data))
-        
         const anakList = Array.isArray(response.data) ? response.data : []
-        console.log('👥 Anak list processed:', anakList)
-        console.log('👥 Anak list length:', anakList.length)
-        
         setDaftarAnak(anakList)
         
         // Auto-select primary child or first child
         const primaryChild = anakList.find((child: Anak) => child.is_primary) || anakList[0]
         if (primaryChild) {
-          console.log('👶 Auto-selecting child:', primaryChild)
           setSelectedAnak(primaryChild)
-        } else {
-          console.log('⚠️ No child found to auto-select')
         }
-      } else {
-        console.warn('⚠️ Failed to load daftar anak:', response)
-        console.warn('⚠️ Response success:', response.success)
-        console.warn('⚠️ Response data:', response.data)
-        console.warn('⚠️ Response message:', response.message)
       }
     } catch (error) {
-      console.error('❌ Error loading daftar anak:', error)
-      if (error instanceof Error) {
-        console.error('❌ Error message:', error.message)
-        console.error('❌ Error stack:', error.stack)
-      }
+      console.error('Error loading daftar anak:', error)
     }
   }
 
@@ -195,33 +144,15 @@ const OrangTuaExamPage: React.FC = () => {
       const tanggal_mulai = startDate.toISOString().split('T')[0]
       const tanggal_selesai = endDate.toISOString().split('T')[0]
       
-      console.log('🔄 Loading exam data for child:', { 
-        siswa_id: selectedAnak.id,
-        tanggal_mulai, 
-        tanggal_selesai,
-        selectedAnak
-      })
-
-      // Debug: Check localStorage data
-      console.log('🔍 User data from localStorage:', localStorage.getItem('userData'))
-      console.log('🔍 Access token:', localStorage.getItem('accessToken') ? 'Present' : 'Missing')
-      
-      const response = await orangTuaAPI.getJadwalUjianAnak(selectedAnak.id, tanggal_mulai, tanggal_selesai)
-      
-      console.log('📋 Raw API response:', response)
-      console.log('📋 Response success:', response.success)
-      console.log('📋 Response message:', response.message)
-      console.log('📋 Response data:', response.data)
+      const response = await orangTuaAPI.getJadwalUjianAnak(selectedAnak.siswa_id, tanggal_mulai, tanggal_selesai)
       
       if (response.success && response.data) {
         setExamData(response.data as ExamData)
-        console.log('✅ Exam data loaded:', response.data)
       } else {
-        console.log('⚠️ API response indicates failure:', response)
         throw new Error(response.message || 'Gagal memuat data ujian')
       }
     } catch (error) {
-      console.error('❌ Error loading exam data:', error)
+      console.error('Error loading exam data:', error)
       
       // More specific error handling
       if (error instanceof Error) {
@@ -408,11 +339,58 @@ const OrangTuaExamPage: React.FC = () => {
             Pilih Anak
           </div>
 
+          {/* Anak Selection with Buttons (like attendance page) */}
+          <div style={{
+            display: 'flex',
+            gap: '12px',
+            flexWrap: 'wrap',
+            marginBottom: '15px'
+          }}>
+            {daftarAnak.map((anak) => (
+              <motion.div
+                key={anak.siswa_id}
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelectedAnak(anak)}
+                style={{
+                  background: selectedAnak?.siswa_id === anak.siswa_id 
+                    ? COLORS.primary 
+                    : COLORS.white,
+                  color: selectedAnak?.siswa_id === anak.siswa_id ? COLORS.white : COLORS.primary,
+                  border: selectedAnak?.siswa_id === anak.siswa_id 
+                    ? 'none' 
+                    : `2px solid ${COLORS.primary}20`,
+                  borderRadius: '16px',
+                  padding: '16px 24px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.3s ease',
+                  boxShadow: selectedAnak?.siswa_id === anak.siswa_id 
+                    ? '0 8px 25px rgba(0, 0, 0, 0.15)' 
+                    : '0 4px 15px rgba(0, 0, 0, 0.05)',
+                  textAlign: 'center'
+                }}
+              >
+                <div style={{ marginBottom: '4px' }}>
+                  {anak.nama_lengkap}
+                </div>
+                <div style={{
+                  fontSize: '12px',
+                  opacity: 0.8
+                }}>
+                  Kelas {anak.nama_kelas}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Dropdown as backup */}
           <div style={{ position: 'relative', marginBottom: '15px' }}>
             <select
-              value={selectedAnak?.id || ''}
+              value={selectedAnak?.siswa_id || ''}
               onChange={(e) => {
-                const anak = daftarAnak.find(a => a.id === parseInt(e.target.value))
+                const anak = daftarAnak.find(a => a.siswa_id === parseInt(e.target.value))
                 setSelectedAnak(anak || null)
               }}
               style={{
@@ -430,7 +408,7 @@ const OrangTuaExamPage: React.FC = () => {
             >
               <option value="">Pilih anak...</option>
               {daftarAnak.map((anak) => (
-                <option key={anak.id} value={anak.id}>
+                <option key={anak.siswa_id} value={anak.siswa_id}>
                   {anak.nama_lengkap} - Kelas {anak.nama_kelas}
                 </option>
               ))}
@@ -446,75 +424,6 @@ const OrangTuaExamPage: React.FC = () => {
                 pointerEvents: 'none'
               }}
             />
-          </div>
-
-          {/* Debug buttons */}
-          <div style={{
-            display: 'flex',
-            gap: '10px',
-            flexWrap: 'wrap'
-          }}>
-            <button
-              onClick={loadDaftarAnak}
-              style={{
-                background: COLORS.primary,
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 15px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              Refresh Daftar Anak
-            </button>
-            <button
-              onClick={testGetDaftarAnak}
-              style={{
-                background: '#16a34a',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 15px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              Test getDaftarAnak
-            </button>
-            <button
-              onClick={async () => {
-                try {
-                  console.log('🧪 Testing direct API call with known working parameters...')
-                  // Using your exact example parameters
-                  const testResponse = await orangTuaAPI.getJadwalUjianAnak(2, '2026-01-01', '2026-03-30')
-                  console.log('🧪 Direct test response:', testResponse)
-                  if (testResponse.success) {
-                    console.log('✅ Direct API test successful!')
-                    console.log('📋 Sample data:', testResponse.data)
-                  } else {
-                    console.log('❌ Direct API test failed:', testResponse.message)
-                  }
-                } catch (error) {
-                  console.error('❌ Direct API test error:', error)
-                }
-              }}
-              style={{
-                background: '#dc2626',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 15px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              Test Direct API
-            </button>
-          </div>
-
-          <div style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
-            Debug Info: Daftar anak loaded: {daftarAnak.length}, Selected: {selectedAnak?.nama_lengkap || 'None'}
           </div>
         </motion.div>
 
