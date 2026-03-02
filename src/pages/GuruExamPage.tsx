@@ -87,6 +87,7 @@ interface Siswa {
 const GuruExamPage: React.FC = () => {
   const [examData, setExamData] = useState<ExamData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingSiswa, setIsLoadingSiswa] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [daftarSiswa, setDaftarSiswa] = useState<Siswa[]>([])
   const [selectedSiswa, setSelectedSiswa] = useState<Siswa | null>(null)
@@ -108,35 +109,87 @@ const GuruExamPage: React.FC = () => {
 
   const loadDaftarSiswa = async () => {
     try {
-      // For now, we'll use a static list since we need to know which endpoint to use for getting students
-      // In a real implementation, this would come from getKelas() and getSiswaKelas()
-      const mockSiswa: Siswa[] = [
-        {
-          siswa_id: 4,
-          nama_lengkap: "Test Siswa 1",
-          nis: "2024004",
-          nisn: "0061234570",
-          nama_kelas: "X IPA 1",
-          jenjang: "SMA"
-        },
-        {
-          siswa_id: 5,
-          nama_lengkap: "Test Siswa 2", 
-          nis: "2024005",
-          nisn: "0061234571",
-          nama_kelas: "X IPA 1",
-          jenjang: "SMA"
-        }
-      ]
+      setIsLoadingSiswa(true)
+      setError(null)
       
-      setDaftarSiswa(mockSiswa)
+      console.log('🔍 DEBUG: Memulai loadDaftarSiswa...')
+      
+      // Get daftar kelas yang diajar guru
+      console.log('🔍 DEBUG: Memanggil guruAPI.getKelas()...')
+      const kelasResponse = await guruAPI.getKelas()
+      
+      console.log('🔍 DEBUG: Response getKelas:', kelasResponse)
+      
+      if (!kelasResponse.success || !kelasResponse.data) {
+        console.log('🔍 DEBUG: getKelas gagal atau tidak ada data')
+        throw new Error('Gagal memuat daftar kelas')
+      }
+      
+      // Get siswa dari semua kelas yang diajar guru
+      const allSiswa: Siswa[] = []
+      const kelasList = Array.isArray(kelasResponse.data) ? kelasResponse.data : [kelasResponse.data]
+      
+      console.log('🔍 DEBUG: Daftar kelas:', kelasList)
+      
+      for (const kelas of kelasList) {
+        try {
+          console.log(`🔍 DEBUG: Memuat siswa untuk kelas ${kelas.id}...`)
+          const siswaResponse = await guruAPI.getSiswaKelas(kelas.id)
+          
+          console.log(`🔍 DEBUG: Response getSiswaKelas(${kelas.id}):`, siswaResponse)
+          
+          if (siswaResponse.success && siswaResponse.data) {
+            // Map data siswa dengan format yang sesuai
+            const siswaData = Array.isArray(siswaResponse.data) ? siswaResponse.data : [siswaResponse.data]
+            console.log(`🔍 DEBUG: Data siswa kelas ${kelas.id}:`, siswaData)
+            
+            const siswaKelas = siswaData.map((siswa: any) => ({
+              siswa_id: siswa.siswa_id,
+              nama_lengkap: siswa.nama_lengkap,
+              nis: siswa.nis,
+              nisn: siswa.nisn || '', // API tidak mengembalikan NISN, set sebagai string kosong
+              nama_kelas: kelas.nama_kelas || `Kelas ${kelas.id}`, // Menggunakan nama_kelas dari response
+              jenjang: kelas.jenjang || 'SMA' // Menggunakan jenjang dari response
+            }))
+            
+            console.log(`🔍 DEBUG: Siswa kelas ${kelas.id} setelah mapping:`, siswaKelas)
+            allSiswa.push(...siswaKelas)
+          }
+        } catch (error) {
+          console.error(`🔍 DEBUG: Error loading siswa for kelas ${kelas.id}:`, error)
+          // Continue with other classes even if one fails
+        }
+      }
+      
+      console.log('🔍 DEBUG: Total siswa dari semua kelas:', allSiswa)
+      
+      if (allSiswa.length === 0) {
+        setError('Tidak ditemukan siswa dalam kelas yang Anda ajar')
+        return
+      }
+      
+      setDaftarSiswa(allSiswa)
       
       // Auto-select first student
-      if (mockSiswa.length > 0) {
-        setSelectedSiswa(mockSiswa[0])
+      if (allSiswa.length > 0) {
+        setSelectedSiswa(allSiswa[0])
       }
     } catch (error) {
-      console.error('Error loading daftar siswa:', error)
+      console.error('🔍 DEBUG: Error loading daftar siswa:', error)
+      
+      if (error instanceof Error) {
+        if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+          setError('Anda tidak memiliki akses untuk melihat data siswa. Pastikan Anda login sebagai guru.')
+        } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
+          setError('Akses ditolak. Anda mungkin tidak memiliki izin untuk mengakses data kelas.')
+        } else {
+          setError(error.message)
+        }
+      } else {
+        setError('Terjadi kesalahan saat memuat daftar siswa')
+      }
+    } finally {
+      setIsLoadingSiswa(false)
     }
   }
 
@@ -442,8 +495,33 @@ const GuruExamPage: React.FC = () => {
           </div>
         </motion.div>
 
+        {/* Show loading state for students */}
+        {isLoadingSiswa && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{
+              background: COLORS.white,
+              borderRadius: '16px',
+              padding: '40px',
+              textAlign: 'center',
+              color: '#666',
+              marginBottom: '20px'
+            }}
+          >
+            <RefreshCw size={48} color={COLORS.primary} style={{
+              margin: '0 auto 20px',
+              animation: 'spin 1s linear infinite'
+            }} />
+            <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 10px 0' }}>
+              Memuat Daftar Siswa
+            </h3>
+            <p style={{ margin: 0 }}>Mohon tunggu sebentar...</p>
+          </motion.div>
+        )}
+
         {/* Show error if no students loaded */}
-        {daftarSiswa.length === 0 && (
+        {!isLoadingSiswa && daftarSiswa.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -472,10 +550,35 @@ const GuruExamPage: React.FC = () => {
                 borderRadius: '8px',
                 padding: '10px 20px',
                 fontWeight: '600',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                marginRight: '10px'
               }}
             >
               Coba Lagi
+            </button>
+            <button
+              onClick={async () => {
+                console.log('🧪 TEST: Memulai test API...')
+                try {
+                  const kelasTest = await guruAPI.getKelas()
+                  console.log('🧪 TEST: getKelas result:', kelasTest)
+                  alert(`getKelas result: ${JSON.stringify(kelasTest, null, 2)}`)
+                } catch (error) {
+                  console.error('🧪 TEST: getKelas error:', error)
+                  alert(`getKelas error: ${error}`)
+                }
+              }}
+              style={{
+                background: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 20px',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+            >
+              Test API
             </button>
           </motion.div>
         )}
