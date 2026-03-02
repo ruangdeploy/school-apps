@@ -7,7 +7,8 @@ import {
   Award,
   ChevronRight,
   CheckCircle,
-  Users
+  Users,
+  FileText
 } from 'lucide-react'
 import { absensiAPI } from '../services/api'
 
@@ -825,6 +826,13 @@ const HomePage: React.FC = () => {
                   icon: Clock,
                   color: COLORS.primary,
                   action: () => window.location.href = '/attendance'
+                },
+                {
+                  title: 'Jadwal Ujian',
+                  subtitle: 'Lihat jadwal ujian dan persiapan',
+                  icon: FileText,
+                  color: '#dc2626',
+                  action: () => window.location.href = '/exams'
                 },
                 {
                   title: 'Profil',
