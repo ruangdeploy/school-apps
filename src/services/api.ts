@@ -360,3 +360,122 @@ export const configAPI = {
   getSchoolConfig: () =>
     apiService.get('/config'),
 }
+
+// Admin APIs
+export const adminAPI = {
+  // Dashboard Statistics
+  getDashboardStats: () =>
+    apiService.get('/admin/dashboard/stats'),
+    
+  // Student Management
+  getAllStudents: (page?: number, limit?: number, search?: string) => {
+    let query = ''
+    if (page || limit || search) {
+      const params = new URLSearchParams()
+      if (page) params.append('page', page.toString())
+      if (limit) params.append('limit', limit.toString()) 
+      if (search) params.append('search', search)
+      query = `?${params.toString()}`
+    }
+    return apiService.get(`/admin/students${query}`)
+  },
+  
+  getStudentById: (id: string) =>
+    apiService.get(`/admin/students/${id}`),
+    
+  createStudent: (studentData: any) =>
+    apiService.post('/admin/students', studentData),
+    
+  updateStudent: (id: string, studentData: any) =>
+    apiService.put(`/admin/students/${id}`, studentData),
+    
+  deleteStudent: (id: string) =>
+    apiService.delete(`/admin/students/${id}`),
+    
+  // Teacher Management
+  getAllTeachers: (page?: number, limit?: number, search?: string) => {
+    let query = ''
+    if (page || limit || search) {
+      const params = new URLSearchParams()
+      if (page) params.append('page', page.toString())
+      if (limit) params.append('limit', limit.toString())
+      if (search) params.append('search', search)
+      query = `?${params.toString()}`
+    }
+    return apiService.get(`/admin/teachers${query}`)
+  },
+  
+  getTeacherById: (id: string) =>
+    apiService.get(`/admin/teachers/${id}`),
+    
+  createTeacher: (teacherData: any) =>
+    apiService.post('/admin/teachers', teacherData),
+    
+  updateTeacher: (id: string, teacherData: any) =>
+    apiService.put(`/admin/teachers/${id}`, teacherData),
+    
+  deleteTeacher: (id: string) =>
+    apiService.delete(`/admin/teachers/${id}`),
+    
+  // Class Management
+  getAllClasses: () =>
+    apiService.get('/admin/classes'),
+    
+  getClassById: (id: string) =>
+    apiService.get(`/admin/classes/${id}`),
+    
+  createClass: (classData: any) =>
+    apiService.post('/admin/classes', classData),
+    
+  updateClass: (id: string, classData: any) =>
+    apiService.put(`/admin/classes/${id}`, classData),
+    
+  deleteClass: (id: string) =>
+    apiService.delete(`/admin/classes/${id}`),
+    
+  // Attendance Reports
+  getAttendanceReports: (startDate: string, endDate: string, classId?: string) => {
+    const params = new URLSearchParams()
+    params.append('start_date', startDate)
+    params.append('end_date', endDate)
+    if (classId) params.append('class_id', classId)
+    return apiService.get(`/admin/reports/attendance?${params.toString()}`)
+  },
+  
+  // User Management
+  getAllUsers: (page?: number, limit?: number) => {
+    let query = ''
+    if (page || limit) {
+      const params = new URLSearchParams()
+      if (page) params.append('page', page.toString())
+      if (limit) params.append('limit', limit.toString())
+      query = `?${params.toString()}`
+    }
+    return apiService.get(`/admin/users${query}`)
+  },
+  
+  updateUserStatus: (userId: string, status: 'active' | 'inactive') =>
+    apiService.put(`/admin/users/${userId}/status`, { status }),
+    
+  resetUserPassword: (userId: string) =>
+    apiService.post(`/admin/users/${userId}/reset-password`),
+    
+  // System Settings
+  getSystemSettings: () =>
+    apiService.get('/admin/settings'),
+    
+  updateSystemSettings: (settings: any) =>
+    apiService.put('/admin/settings', settings),
+    
+  // Activity Logs
+  getActivityLogs: (page?: number, limit?: number) => {
+    let query = ''
+    if (page || limit) {
+      const params = new URLSearchParams()
+      if (page) params.append('page', page.toString())
+      if (limit) params.append('limit', limit.toString())
+      query = `?${params.toString()}`
+    }
+    return apiService.get(`/admin/activity-logs${query}`)
+  }
+}

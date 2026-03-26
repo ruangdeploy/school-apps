@@ -6,6 +6,8 @@ interface LoginForm {
   password: string
 }
 
+type UserType = 'siswa' | 'guru' | 'orangtua' | 'admin'
+
 // Color palette constants
 const COLORS = {
   primary: 'rgb(15, 76, 92)',
@@ -17,7 +19,8 @@ const COLORS = {
 const DEMO_ACCOUNTS = {
   siswa: { email: 'andika.anggakusuma90@gmail.com', password: 'password123' },
   guru: { email: 'anca.gimbal@gmail.com', password: 'password123' },
-  orangtua: { email: 'facebabybabyface@gmail.com', password: 'password123' }
+  orangtua: { email: 'facebabybabyface@gmail.com', password: 'password123' },
+  admin: { email: 'admin@school.com', password: 'admin123' }
 }
 
 const MultiLoginPage: React.FC = () => {
@@ -392,6 +395,35 @@ const MultiLoginPage: React.FC = () => {
               >
                 Lupa password?
               </a>
+            </div>
+
+            {/* Admin Login Link */}
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <button
+                type="button"
+                onClick={() => window.location.href = '/admin/login'}
+                style={{
+                  background: 'none',
+                  border: `1px solid ${COLORS.primary}`,
+                  color: COLORS.primary,
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = COLORS.primary
+                  e.currentTarget.style.color = 'white'
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'none'
+                  e.currentTarget.style.color = COLORS.primary
+                }}
+              >
+                🔐 Login Administrator
+              </button>
             </div>
 
             {/* Demo Account Info */}
