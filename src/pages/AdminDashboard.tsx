@@ -66,7 +66,7 @@ const mockAdminStats = {
 interface AdminDashboardProps {}
 
 const AdminDashboard: React.FC<AdminDashboardProps> = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'teachers' | 'classes' | 'reports'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'teachers' | 'guru' | 'classes' | 'reports'>('overview')
   const [stats] = useState(mockAdminStats)
 
   const statCards = [
@@ -105,6 +105,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     { id: 'users', label: 'Pengguna', icon: Users },
     { id: 'students', label: 'Siswa', icon: Users },
     { id: 'teachers', label: 'Orang Tua', icon: GraduationCap },
+    { id: 'guru', label: 'Guru', icon: UserCheck },
     { id: 'classes', label: 'Kelas', icon: FileText },
     { id: 'reports', label: 'Laporan', icon: BarChart3 }
   ]
@@ -397,6 +398,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
 
         {activeTab === 'students' && <StudentManagement />}
         {activeTab === 'teachers' && <ParentManagement />}
+        {activeTab === 'guru' && <TeacherManagement />}
         {activeTab === 'classes' && <ClassManagement />}
         {activeTab === 'reports' && <ReportsRedirect />}
       </div>
@@ -3449,6 +3451,1448 @@ const ParentManagement: React.FC = () => {
                 </div>
               </form>
             ) : null}
+          </motion.div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Teacher Management Component
+interface Teacher {
+  guru_id: number;
+  nama_lengkap: string;
+  nip: string;
+  jenis_kelamin: 'L' | 'P';
+  tanggal_lahir: string;
+  alamat: string;
+  tanggal_bergabung: string;
+  email: string;
+  no_telepon: string;
+}
+
+interface WaliKelas {
+  wali_kelas_id: number;
+  guru_id?: number;
+  tahun_ajaran: string;
+  nama_guru: string;
+  nip: string;
+  jenis_kelamin: 'L' | 'P';
+  kelas_id: number;
+  nama_kelas: string;
+  tingkat: number;
+  jurusan?: string | null;
+  tahun_ajaran_kelas: string;
+}
+
+interface AssignTeacherFormData {
+  user_id: number | '';
+  nip: string;
+  jenis_kelamin: 'L' | 'P';
+  tanggal_lahir: string;
+  alamat: string;
+  tanggal_bergabung: string;
+}
+
+interface EditTeacherFormData {
+  nip: string;
+  jenis_kelamin: 'L' | 'P';
+  tanggal_lahir: string;
+  alamat: string;
+  tanggal_bergabung: string;
+}
+
+interface AssignWaliKelasFormData {
+  guru_id: number | '';
+  kelas_id: number | '';
+  tahun_ajaran: string;
+}
+
+const TeacherManagement: React.FC = () => {
+  const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [waliKelas, setWaliKelas] = useState<WaliKelas[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [classes, setClasses] = useState<Class[]>([])
+  const [loading, setLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalTeachers, setTotalTeachers] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null)
+  const [selectedWaliKelas, setSelectedWaliKelas] = useState<WaliKelas | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [modalType, setModalType] = useState<'assign' | 'edit' | 'delete' | 'assign-wali' | 'edit-wali' | 'delete-wali' | 'view-wali'>('assign')
+  const [activeView, setActiveView] = useState<'teachers' | 'wali-kelas'>('teachers')
+  
+  const [assignTeacherFormData, setAssignTeacherFormData] = useState<AssignTeacherFormData>({
+    user_id: '',
+    nip: '',
+    jenis_kelamin: 'L',
+    tanggal_lahir: '',
+    alamat: '',
+    tanggal_bergabung: new Date().toISOString().split('T')[0]
+  })
+
+  const [editTeacherFormData, setEditTeacherFormData] = useState<EditTeacherFormData>({
+    nip: '',
+    jenis_kelamin: 'L',
+    tanggal_lahir: '',
+    alamat: '',
+    tanggal_bergabung: ''
+  })
+
+  const [assignWaliKelasFormData, setAssignWaliKelasFormData] = useState<AssignWaliKelasFormData>({
+    guru_id: '',
+    kelas_id: '',
+    tahun_ajaran: '2026/2027'
+  })
+
+  const ITEMS_PER_PAGE = 10
+
+  // API Functions
+  const getAuthToken = () => {
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData)
+        if (parsed.accessToken) {
+          return parsed.accessToken
+        }
+      } catch (error) {
+        console.log('Error parsing userData:', error)
+      }
+    }
+    
+    const directToken = localStorage.getItem('accessToken')
+    if (directToken) {
+      return directToken
+    }
+    
+    const cookieToken = document.cookie.split('; ').find(row => row.startsWith('accessToken='))?.split('=')[1]
+    if (cookieToken) {
+      return cookieToken
+    }
+    
+    return null
+  }
+
+  const apiCall = async (url: string, options: RequestInit = {}) => {
+    const token = getAuthToken()
+    
+    if (!token) {
+      throw new Error('No authentication token found. Please login again.')
+    }
+    
+    console.log('Making API call to:', `http://localhost:3000${url}`)
+    
+    const response = await fetch(`http://localhost:3000${url}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+      },
+      ...options
+    })
+    
+    console.log('API Response status:', response.status)
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.log('API Error response:', errorText)
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
+    }
+    
+    const data = await response.json()
+    console.log('API Response data:', data)
+    return data
+  }
+
+  const fetchTeachers = async (page = 1, limit = ITEMS_PER_PAGE, search = '') => {
+    setLoading(true)
+    try {
+      const searchParam = search ? `&search=${encodeURIComponent(search)}` : ''
+      const response = await apiCall(`/api/guru/list?page=${page}&limit=${limit}${searchParam}`)
+      
+      if (response.success && response.data) {
+        setTeachers(response.data)
+        setTotalTeachers(response.paging?.total || response.data.length)
+      } else {
+        throw new Error('Invalid API response format')
+      }
+    } catch (error) {
+      console.error('Error fetching teachers:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      
+      if (errorMessage.includes('No authentication token found')) {
+        alert('Sesi login telah berakhir. Silakan login ulang sebagai admin.')
+        window.location.href = '/admin/login'
+        return
+      }
+      
+      alert(`Error memuat data guru: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchWaliKelas = async () => {
+    try {
+      const response = await apiCall('/api/guru/walikelas')
+      if (response.success && response.data) {
+        setWaliKelas(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching wali kelas:', error)
+    }
+  }
+
+  const fetchUsers = async () => {
+    try {
+      const response = await apiCall('/api/users/list?limit=1000')
+      if (response.success && response.data) {
+        // Filter only users that could be teachers
+        const teacherUsers = response.data.filter((user: User) => 
+          user.tipe_user === 'guru'
+        )
+        setUsers(teacherUsers)
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error)
+    }
+  }
+
+  const fetchClasses = async () => {
+    try {
+      const response = await apiCall('/api/kelas/list?limit=1000')
+      if (response.success && response.data) {
+        setClasses(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error)
+    }
+  }
+
+  const assignTeacher = async () => {
+    setLoading(true)
+    try {
+      await apiCall('/api/assign/guru', {
+        method: 'POST',
+        body: JSON.stringify(assignTeacherFormData)
+      })
+      alert('Guru berhasil ditugaskan!')
+      fetchTeachers(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error assigning teacher:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menugaskan guru: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateTeacher = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/guru/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(editTeacherFormData)
+      })
+      alert('Data guru berhasil diperbarui!')
+      fetchTeachers(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error updating teacher:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error memperbarui data guru: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteTeacher = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/guru/${id}`, {
+        method: 'DELETE'
+      })
+      alert('Guru berhasil dihapus!')
+      fetchTeachers(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error deleting teacher:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menghapus guru: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const assignWaliKelas = async () => {
+    setLoading(true)
+    try {
+      await apiCall('/api/assign/wali-kelas', {
+        method: 'POST',
+        body: JSON.stringify(assignWaliKelasFormData)
+      })
+      alert('Wali kelas berhasil ditugaskan!')
+      fetchWaliKelas()
+      closeModal()
+    } catch (error) {
+      console.error('Error assigning wali kelas:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menugaskan wali kelas: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateWaliKelas = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/guru/walikelas/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(assignWaliKelasFormData)
+      })
+      alert('Wali kelas berhasil diperbarui!')
+      fetchWaliKelas()
+      closeModal()
+    } catch (error) {
+      console.error('Error updating wali kelas:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error memperbarui wali kelas: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteWaliKelas = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/guru/walikelas/${id}`, {
+        method: 'DELETE'
+      })
+      alert('Wali kelas berhasil dihapus!')
+      fetchWaliKelas()
+      closeModal()
+    } catch (error) {
+      console.error('Error deleting wali kelas:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menghapus wali kelas: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Modal Functions
+  const openAssignModal = () => {
+    setAssignTeacherFormData({
+      user_id: '',
+      nip: '',
+      jenis_kelamin: 'L',
+      tanggal_lahir: '',
+      alamat: '',
+      tanggal_bergabung: new Date().toISOString().split('T')[0]
+    })
+    setModalType('assign')
+    setShowModal(true)
+  }
+
+  const openEditModal = (teacher: Teacher) => {
+    setSelectedTeacher(teacher)
+    setEditTeacherFormData({
+      nip: teacher.nip,
+      jenis_kelamin: teacher.jenis_kelamin,
+      tanggal_lahir: teacher.tanggal_lahir,
+      alamat: teacher.alamat,
+      tanggal_bergabung: teacher.tanggal_bergabung
+    })
+    setModalType('edit')
+    setShowModal(true)
+  }
+
+  const openDeleteModal = (teacher: Teacher) => {
+    setSelectedTeacher(teacher)
+    setModalType('delete')
+    setShowModal(true)
+  }
+
+  const openAssignWaliModal = () => {
+    setAssignWaliKelasFormData({
+      guru_id: '',
+      kelas_id: '',
+      tahun_ajaran: '2026/2027'
+    })
+    setModalType('assign-wali')
+    setShowModal(true)
+  }
+
+  const openEditWaliModal = (wali: WaliKelas) => {
+    setSelectedWaliKelas(wali)
+    setAssignWaliKelasFormData({
+      guru_id: wali.guru_id || '',
+      kelas_id: wali.kelas_id,
+      tahun_ajaran: wali.tahun_ajaran
+    })
+    setModalType('edit-wali')
+    setShowModal(true)
+  }
+
+  const openDeleteWaliModal = (wali: WaliKelas) => {
+    setSelectedWaliKelas(wali)
+    setModalType('delete-wali')
+    setShowModal(true)
+  }
+
+  const closeModal = () => {
+    setShowModal(false)
+    setSelectedTeacher(null)
+    setSelectedWaliKelas(null)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (modalType === 'assign') {
+      assignTeacher()
+    } else if (modalType === 'edit' && selectedTeacher) {
+      updateTeacher(selectedTeacher.guru_id)
+    } else if (modalType === 'delete' && selectedTeacher) {
+      deleteTeacher(selectedTeacher.guru_id)
+    } else if (modalType === 'assign-wali') {
+      assignWaliKelas()
+    } else if (modalType === 'edit-wali' && selectedWaliKelas) {
+      updateWaliKelas(selectedWaliKelas.wali_kelas_id)
+    } else if (modalType === 'delete-wali' && selectedWaliKelas) {
+      deleteWaliKelas(selectedWaliKelas.wali_kelas_id)
+    }
+  }
+
+  const handleSearch = (searchValue: string) => {
+    setSearchTerm(searchValue)
+    setCurrentPage(1)
+    fetchTeachers(1, ITEMS_PER_PAGE, searchValue)
+  }
+
+  React.useEffect(() => {
+    if (activeView === 'teachers') {
+      fetchTeachers(currentPage, ITEMS_PER_PAGE, searchTerm)
+    } else {
+      fetchWaliKelas()
+    }
+  }, [currentPage, activeView])
+
+  React.useEffect(() => {
+    fetchUsers()
+    fetchClasses()
+  }, [])
+
+  const filteredTeachers = teachers.filter(teacher =>
+    teacher.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    teacher.nip.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    teacher.email.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const totalPages = Math.ceil(totalTeachers / ITEMS_PER_PAGE)
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: '24px',
+        flexWrap: 'wrap',
+        gap: '16px'
+      }}>
+        <div style={{ flex: 1, minWidth: '200px' }}>
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: COLORS.primary,
+            margin: '0 0 8px 0'
+          }}>
+            Manajemen Guru
+          </h2>
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            margin: 0
+          }}>
+            Kelola guru dan wali kelas
+          </p>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* View Toggle */}
+          <div style={{
+            display: 'flex',
+            background: '#f1f5f9',
+            borderRadius: '8px',
+            padding: '4px'
+          }}>
+            <button
+              onClick={() => setActiveView('teachers')}
+              style={{
+                padding: '8px 16px',
+                border: 'none',
+                borderRadius: '6px',
+                background: activeView === 'teachers' ? COLORS.primary : 'transparent',
+                color: activeView === 'teachers' ? 'white' : '#64748b',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              Guru
+            </button>
+            <button
+              onClick={() => setActiveView('wali-kelas')}
+              style={{
+                padding: '8px 16px',
+                border: 'none',
+                borderRadius: '6px',
+                background: activeView === 'wali-kelas' ? COLORS.primary : 'transparent',
+                color: activeView === 'wali-kelas' ? 'white' : '#64748b',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              Wali Kelas
+            </button>
+          </div>
+
+          <button
+            onClick={activeView === 'teachers' ? openAssignModal : openAssignWaliModal}
+            style={{
+              background: COLORS.primary,
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '12px 20px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 4px rgba(15, 76, 92, 0.2)'
+            }}
+          >
+            <Plus size={16} />
+            {activeView === 'teachers' ? 'Tugaskan Guru' : 'Tugaskan Wali Kelas'}
+          </button>
+        </div>
+      </div>
+
+      {/* Search */}
+      {activeView === 'teachers' && (
+        <div style={{
+          background: COLORS.white,
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '20px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{ position: 'relative' }}>
+            <Search 
+              size={20} 
+              color="#6b7280" 
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)'
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Cari guru berdasarkan nama, NIP, atau email..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 12px 12px 44px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '14px',
+                outline: 'none'
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Content */}
+      {activeView === 'teachers' ? (
+        /* Teachers Table */
+        <div style={{
+          background: COLORS.white,
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+          overflow: 'hidden'
+        }}>
+          {loading ? (
+            <div style={{
+              padding: '60px',
+              textAlign: 'center',
+              color: '#6b7280'
+            }}>
+              Memuat data...
+            </div>
+          ) : filteredTeachers.length === 0 ? (
+            <div style={{
+              padding: '60px',
+              textAlign: 'center',
+              color: '#6b7280'
+            }}>
+              Tidak ada guru ditemukan
+            </div>
+          ) : (
+            <>
+              {/* Table Header */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 150px 100px 120px 150px 1fr 120px',
+                gap: '16px',
+                padding: '16px 20px',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                borderBottom: '2px solid #e2e8f0',
+                fontSize: '13px',
+                fontWeight: '700',
+                color: '#475569',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                <div>Nama Guru</div>
+                <div>NIP</div>
+                <div>Gender</div>
+                <div>Tgl Bergabung</div>
+                <div>No. Telepon</div>
+                <div>Alamat</div>
+                <div style={{ textAlign: 'center' }}>Aksi</div>
+              </div>
+
+              {/* Table Body */}
+              {filteredTeachers.map((teacher, index) => (
+                <div
+                  key={teacher.guru_id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 150px 100px 120px 150px 1fr 120px',
+                    gap: '16px',
+                    padding: '16px 20px',
+                    borderBottom: '1px solid #e5e7eb',
+                    fontSize: '14px',
+                    alignItems: 'center',
+                    background: index % 2 === 0 ? 'white' : '#fafbfc',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#f0f9ff'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = index % 2 === 0 ? 'white' : '#fafbfc'
+                  }}
+                >
+                  <div>
+                    <div style={{
+                      fontWeight: '600',
+                      color: '#1f2937'
+                    }}>
+                      {teacher.nama_lengkap}
+                    </div>
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#6b7280',
+                      marginTop: '2px'
+                    }}>
+                      {teacher.email}
+                    </div>
+                  </div>
+                  
+                  <div style={{ 
+                    color: '#374151',
+                    fontWeight: '500',
+                    fontSize: '13px'
+                  }}>
+                    {teacher.nip}
+                  </div>
+                  
+                  <div>
+                    <span style={{
+                      background: teacher.jenis_kelamin === 'L' ? '#dbeafe' : '#fdf2f8',
+                      color: teacher.jenis_kelamin === 'L' ? '#1d4ed8' : '#ec4899',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: '600'
+                    }}>
+                      {teacher.jenis_kelamin === 'L' ? 'L' : 'P'}
+                    </span>
+                  </div>
+                  
+                  <div style={{
+                    color: '#374151',
+                    fontSize: '13px'
+                  }}>
+                    {new Date(teacher.tanggal_bergabung).toLocaleDateString('id-ID')}
+                  </div>
+                  
+                  <div style={{
+                    color: '#6b7280',
+                    fontSize: '13px'
+                  }}>
+                    {teacher.no_telepon}
+                  </div>
+                  
+                  <div style={{
+                    color: '#6b7280',
+                    fontSize: '12px',
+                    lineHeight: '1.4'
+                  }}>
+                    {teacher.alamat}
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    gap: '6px',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <button
+                      onClick={() => openEditModal(teacher)}
+                      style={{
+                        background: '#f3f4f6',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        padding: '6px 8px',
+                        color: '#374151',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="Edit guru"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#e5e7eb'
+                        e.currentTarget.style.color = COLORS.primary
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#f3f4f6'
+                        e.currentTarget.style.color = '#374151'
+                      }}
+                    >
+                      <Edit size={14} />
+                    </button>
+                    <button
+                      onClick={() => openDeleteModal(teacher)}
+                      style={{
+                        background: '#fef2f2',
+                        border: '1px solid #fecaca',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        padding: '6px 8px',
+                        color: '#dc2626',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="Hapus guru"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#fee2e2'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#fef2f2'
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      ) : (
+        /* Wali Kelas Table */
+        <div style={{
+          background: COLORS.white,
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+          overflow: 'hidden'
+        }}>
+          {waliKelas.length === 0 ? (
+            <div style={{
+              padding: '60px',
+              textAlign: 'center',
+              color: '#6b7280'
+            }}>
+              Tidak ada wali kelas ditemukan
+            </div>
+          ) : (
+            <>
+              {/* Table Header */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 150px 150px 120px 120px 100px',
+                gap: '16px',
+                padding: '16px 20px',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                borderBottom: '2px solid #e2e8f0',
+                fontSize: '13px',
+                fontWeight: '700',
+                color: '#475569',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                <div>Nama Guru</div>
+                <div>NIP</div>
+                <div>Kelas</div>
+                <div>Tingkat</div>
+                <div>Tahun Ajaran</div>
+                <div style={{ textAlign: 'center' }}>Aksi</div>
+              </div>
+
+              {/* Table Body */}
+              {waliKelas.map((wali, index) => (
+                <div
+                  key={wali.wali_kelas_id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 150px 150px 120px 120px 100px',
+                    gap: '16px',
+                    padding: '16px 20px',
+                    borderBottom: '1px solid #e5e7eb',
+                    fontSize: '14px',
+                    alignItems: 'center',
+                    background: index % 2 === 0 ? 'white' : '#fafbfc',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#f0f9ff'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = index % 2 === 0 ? 'white' : '#fafbfc'
+                  }}
+                >
+                  <div>
+                    <div style={{
+                      fontWeight: '600',
+                      color: '#1f2937'
+                    }}>
+                      {wali.nama_guru}
+                    </div>
+                  </div>
+                  
+                  <div style={{ 
+                    color: '#374151',
+                    fontWeight: '500',
+                    fontSize: '13px'
+                  }}>
+                    {wali.nip}
+                  </div>
+                  
+                  <div style={{
+                    color: '#374151',
+                    fontWeight: '500'
+                  }}>
+                    {wali.nama_kelas}
+                  </div>
+                  
+                  <div style={{
+                    color: '#6b7280',
+                    fontSize: '13px'
+                  }}>
+                    {wali.tingkat}
+                  </div>
+                  
+                  <div style={{
+                    color: '#6b7280',
+                    fontSize: '13px'
+                  }}>
+                    {wali.tahun_ajaran}
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    gap: '6px',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <button
+                      onClick={() => openEditWaliModal(wali)}
+                      style={{
+                        background: '#f3f4f6',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        padding: '6px 8px',
+                        color: '#374151',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="Edit wali kelas"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#e5e7eb'
+                        e.currentTarget.style.color = COLORS.primary
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#f3f4f6'
+                        e.currentTarget.style.color = '#374151'
+                      }}
+                    >
+                      <Edit size={14} />
+                    </button>
+                    <button
+                      onClick={() => openDeleteWaliModal(wali)}
+                      style={{
+                        background: '#fef2f2',
+                        border: '1px solid #fecaca',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        padding: '6px 8px',
+                        color: '#dc2626',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="Hapus wali kelas"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#fee2e2'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#fef2f2'
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {activeView === 'teachers' && totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '12px',
+          marginTop: '24px'
+        }}>
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            style={{
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === 1 ? '#f9fafb' : 'white',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              opacity: currentPage === 1 ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            }}
+          >
+            ← Sebelumnya
+          </button>
+          
+          <span style={{
+            padding: '10px 16px',
+            fontSize: '14px',
+            color: '#475569',
+            fontWeight: '500',
+            background: '#f8fafc',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0'
+          }}>
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            style={{
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === totalPages ? '#f9fafb' : 'white',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              opacity: currentPage === totalPages ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            }}
+          >
+            Selanjutnya →
+          </button>
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              width: '100%',
+              maxWidth: modalType.includes('delete') ? '500px' : '600px',
+              margin: '20px',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+          >
+            {modalType.includes('delete') ? (
+              <div>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 16px 0'
+                }}>
+                  {modalType === 'delete' ? 'Hapus Guru' : 'Hapus Wali Kelas'}
+                </h3>
+                
+                <p style={{
+                  fontSize: '14px',
+                  color: '#6b7280',
+                  margin: '0 0 24px 0',
+                  lineHeight: '1.5'
+                }}>
+                  Apakah Anda yakin ingin menghapus {modalType === 'delete' ? 'guru' : 'wali kelas'} <strong>
+                    {modalType === 'delete' ? selectedTeacher?.nama_lengkap : selectedWaliKelas?.nama_guru}
+                  </strong>? 
+                  Tindakan ini tidak dapat dibatalkan.
+                </p>
+                
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end'
+                }}>
+                  <button
+                    onClick={closeModal}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    style={{
+                      padding: '8px 16px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.error,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menghapus...' : 'Hapus'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 20px 0'
+                }}>
+                  {modalType === 'assign' ? 'Tugaskan Guru' : 
+                   modalType === 'edit' ? 'Edit Data Guru' :
+                   modalType === 'assign-wali' ? 'Tugaskan Wali Kelas' :
+                   'Edit Wali Kelas'}
+                </h3>
+
+                {/* Teacher Assignment/Edit Forms */}
+                {(modalType === 'assign' || modalType === 'edit') && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    {modalType === 'assign' && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <label style={{
+                          display: 'block',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          color: '#374151',
+                          marginBottom: '6px'
+                        }}>
+                          Pengguna *
+                        </label>
+                        <select
+                          required
+                          value={assignTeacherFormData.user_id}
+                          onChange={(e) => setAssignTeacherFormData({...assignTeacherFormData, user_id: parseInt(e.target.value)})}
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            outline: 'none',
+                            background: 'white'
+                          }}
+                        >
+                          <option value="">Pilih Pengguna</option>
+                          {users.map(user => (
+                            <option key={user.id} value={user.id}>
+                              {user.nama_lengkap} ({user.email})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        NIP *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={modalType === 'assign' ? assignTeacherFormData.nip : editTeacherFormData.nip}
+                        onChange={(e) => {
+                          if (modalType === 'assign') {
+                            setAssignTeacherFormData({...assignTeacherFormData, nip: e.target.value})
+                          } else {
+                            setEditTeacherFormData({...editTeacherFormData, nip: e.target.value})
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none'
+                        }}
+                        placeholder="Nomor Induk Pegawai"
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Jenis Kelamin *
+                      </label>
+                      <select
+                        required
+                        value={modalType === 'assign' ? assignTeacherFormData.jenis_kelamin : editTeacherFormData.jenis_kelamin}
+                        onChange={(e) => {
+                          if (modalType === 'assign') {
+                            setAssignTeacherFormData({...assignTeacherFormData, jenis_kelamin: e.target.value as 'L' | 'P'})
+                          } else {
+                            setEditTeacherFormData({...editTeacherFormData, jenis_kelamin: e.target.value as 'L' | 'P'})
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          background: 'white'
+                        }}
+                      >
+                        <option value="L">Laki-laki</option>
+                        <option value="P">Perempuan</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Tanggal Lahir *
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={modalType === 'assign' ? assignTeacherFormData.tanggal_lahir : editTeacherFormData.tanggal_lahir}
+                        onChange={(e) => {
+                          if (modalType === 'assign') {
+                            setAssignTeacherFormData({...assignTeacherFormData, tanggal_lahir: e.target.value})
+                          } else {
+                            setEditTeacherFormData({...editTeacherFormData, tanggal_lahir: e.target.value})
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Tanggal Bergabung *
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={modalType === 'assign' ? assignTeacherFormData.tanggal_bergabung : editTeacherFormData.tanggal_bergabung}
+                        onChange={(e) => {
+                          if (modalType === 'assign') {
+                            setAssignTeacherFormData({...assignTeacherFormData, tanggal_bergabung: e.target.value})
+                          } else {
+                            setEditTeacherFormData({...editTeacherFormData, tanggal_bergabung: e.target.value})
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Alamat *
+                      </label>
+                      <textarea
+                        required
+                        value={modalType === 'assign' ? assignTeacherFormData.alamat : editTeacherFormData.alamat}
+                        onChange={(e) => {
+                          if (modalType === 'assign') {
+                            setAssignTeacherFormData({...assignTeacherFormData, alamat: e.target.value})
+                          } else {
+                            setEditTeacherFormData({...editTeacherFormData, alamat: e.target.value})
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          minHeight: '80px',
+                          resize: 'vertical',
+                          fontFamily: 'inherit'
+                        }}
+                        placeholder="Alamat lengkap guru"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Wali Kelas Assignment/Edit Forms */}
+                {(modalType === 'assign-wali' || modalType === 'edit-wali') && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Guru *
+                      </label>
+                      <select
+                        required
+                        value={assignWaliKelasFormData.guru_id}
+                        onChange={(e) => setAssignWaliKelasFormData({...assignWaliKelasFormData, guru_id: parseInt(e.target.value)})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          background: 'white'
+                        }}
+                      >
+                        <option value="">Pilih Guru</option>
+                        {teachers.map(teacher => (
+                          <option key={teacher.guru_id} value={teacher.guru_id}>
+                            {teacher.nama_lengkap} - {teacher.nip}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label style={{
+                          display: 'block',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          color: '#374151',
+                          marginBottom: '6px'
+                        }}>
+                          Kelas *
+                        </label>
+                        <select
+                          required
+                          value={assignWaliKelasFormData.kelas_id}
+                          onChange={(e) => setAssignWaliKelasFormData({...assignWaliKelasFormData, kelas_id: parseInt(e.target.value)})}
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            outline: 'none',
+                            background: 'white'
+                          }}
+                        >
+                          <option value="">Pilih Kelas</option>
+                          {classes.map(cls => (
+                            <option key={cls.id} value={cls.id}>
+                              {cls.nama_kelas} - {cls.jenjang} Tingkat {cls.tingkat}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{
+                          display: 'block',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          color: '#374151',
+                          marginBottom: '6px'
+                        }}>
+                          Tahun Ajaran *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={assignWaliKelasFormData.tahun_ajaran}
+                          onChange={(e) => setAssignWaliKelasFormData({...assignWaliKelasFormData, tahun_ajaran: e.target.value})}
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            outline: 'none'
+                          }}
+                          placeholder="2026/2027"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end',
+                  marginTop: '24px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    style={{
+                      padding: '10px 20px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.primary,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menyimpan...' : 
+                     modalType === 'assign' ? 'Tugaskan' :
+                     modalType === 'edit' ? 'Simpan' :
+                     modalType === 'assign-wali' ? 'Tugaskan' :
+                     'Simpan'}
+                  </button>
+                </div>
+              </form>
+            )}
           </motion.div>
         </div>
       )}
