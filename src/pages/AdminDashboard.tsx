@@ -13,7 +13,8 @@ import {
   Trash2,
   Search,
   Eye,
-  EyeOff
+  EyeOff,
+  ArrowRightLeft
 } from 'lucide-react'
 
 // Color palette constants
@@ -394,9 +395,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
 
         {activeTab === 'users' && <UserManagement />}
 
-        {activeTab === 'students' && <StudentManagementRedirect />}
+        {activeTab === 'students' && <StudentManagement />}
         {activeTab === 'teachers' && <TeacherManagementRedirect />}
-        {activeTab === 'classes' && <ClassManagementRedirect />}
+        {activeTab === 'classes' && <ClassManagement />}
         {activeTab === 'reports' && <ReportsRedirect />}
       </div>
     </div>
@@ -692,11 +693,21 @@ const UserManagement: React.FC = () => {
 
   const getUserTypeColor = (type: string) => {
     switch (type) {
-      case 'admin': return COLORS.error
-      case 'guru': return COLORS.primary
-      case 'siswa': return COLORS.success
-      case 'orang_tua': return COLORS.warning
+      case 'admin': return '#dc2626' // Red for admin
+      case 'guru': return COLORS.primary // Primary blue for teacher
+      case 'siswa': return '#059669' // Green for student
+      case 'orang_tua': return '#d97706' // Orange for parent
       default: return '#6b7280'
+    }
+  }
+
+  const getUserTypeBgColor = (type: string) => {
+    switch (type) {
+      case 'admin': return '#fef2f2' // Light red background
+      case 'guru': return '#f0f9ff' // Light blue background
+      case 'siswa': return '#f0fdf4' // Light green background
+      case 'orang_tua': return '#fffbeb' // Light orange background
+      default: return '#f9fafb'
     }
   }
 
@@ -716,10 +727,12 @@ const UserManagement: React.FC = () => {
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px'
+        alignItems: 'flex-start',
+        marginBottom: '24px',
+        flexWrap: 'wrap',
+        gap: '16px'
       }}>
-        <div>
+        <div style={{ flex: 1, minWidth: '200px' }}>
           <h2 style={{
             fontSize: '24px',
             fontWeight: '700',
@@ -737,50 +750,60 @@ const UserManagement: React.FC = () => {
           </p>
         </div>
         
-        <button
-          onClick={openCreateModal}
-          style={{
-            background: COLORS.primary,
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '12px 20px',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          <Plus size={16} />
-          Tambah Pengguna
-        </button>
-        
-        {/* Debug button - temporary */}
-        <button
-          onClick={() => {
-            const token = getAuthToken()
-            const userType = localStorage.getItem('userType')
-            const userData = localStorage.getItem('userData')
-            console.log('=== DEBUG INFO ===')
-            console.log('Token:', token ? token.substring(0, 20) + '...' : 'None')
-            console.log('User Type:', userType)
-            console.log('User Data:', userData)
-            alert(`Login Status:\nToken: ${token ? 'Found' : 'Missing'}\nUser Type: ${userType}\nUser Data: ${userData ? 'Found' : 'Missing'}`)
-          }}
-          style={{
-            background: COLORS.warning,
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '8px 16px',
-            fontSize: '12px',
-            cursor: 'pointer'
-          }}
-        >
-          Debug Login
-        </button>
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          alignItems: 'center'
+        }}>
+          <button
+            onClick={openCreateModal}
+            style={{
+              background: COLORS.primary,
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '12px 20px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 4px rgba(15, 76, 92, 0.2)'
+            }}
+          >
+            <Plus size={16} />
+            Tambah Pengguna
+          </button>
+          
+          {/* Debug button - temporary */}
+          <button
+            onClick={() => {
+              const token = getAuthToken()
+              const userType = localStorage.getItem('userType')
+              const userData = localStorage.getItem('userData')
+              console.log('=== DEBUG INFO ===')
+              console.log('Token:', token ? token.substring(0, 20) + '...' : 'None')
+              console.log('User Type:', userType)
+              console.log('User Data:', userData)
+              alert(`Login Status:\nToken: ${token ? 'Found' : 'Missing'}\nUser Type: ${userType}\nUser Data: ${userData ? 'Found' : 'Missing'}`)
+            }}
+            style={{
+              background: '#f3f4f6',
+              color: '#6b7280',
+              border: '1px solid #d1d5db',
+              borderRadius: '6px',
+              padding: '8px 12px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            title="Debug authentication status"
+          >
+            🔍 Debug
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -847,39 +870,49 @@ const UserManagement: React.FC = () => {
             {/* Table Header */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 200px 120px 150px 100px',
+              gridTemplateColumns: '1fr 180px 140px 130px 100px',
               gap: '16px',
-              padding: '20px',
-              background: '#f9fafb',
-              borderBottom: '1px solid #e5e7eb',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#374151'
+              padding: '16px 20px',
+              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              borderBottom: '2px solid #e2e8f0',
+              fontSize: '13px',
+              fontWeight: '700',
+              color: '#475569',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
             }}>
               <div>Nama & Email</div>
               <div>No. Telepon</div>
               <div>Tipe User</div>
-              <div>Dibuat</div>
-              <div>Aksi</div>
+              <div>Status</div>
+              <div style={{ textAlign: 'center' }}>Aksi</div>
             </div>
 
             {/* Table Body */}
-            {filteredUsers.map((user) => (
+            {filteredUsers.map((user, index) => (
               <div
                 key={user.id}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 200px 120px 150px 100px',
+                  gridTemplateColumns: '1fr 180px 140px 130px 100px',
                   gap: '16px',
-                  padding: '20px',
+                  padding: '16px 20px',
                   borderBottom: '1px solid #e5e7eb',
                   fontSize: '14px',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  background: index % 2 === 0 ? 'white' : '#fafbfc',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f0f9ff'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = index % 2 === 0 ? 'white' : '#fafbfc'
                 }}
               >
                 <div>
                   <div style={{
-                    fontWeight: '500',
+                    fontWeight: '600',
                     color: '#1f2937',
                     marginBottom: '4px'
                   }}>
@@ -890,58 +923,99 @@ const UserManagement: React.FC = () => {
                   </div>
                 </div>
                 
-                <div style={{ color: '#374151' }}>
+                <div style={{ 
+                  color: '#374151',
+                  fontSize: '13px'
+                }}>
                   {user.no_telepon || '-'}
                 </div>
                 
                 <div>
                   <span style={{
-                    background: `${getUserTypeColor(user.tipe_user)}15`,
+                    background: getUserTypeBgColor(user.tipe_user),
                     color: getUserTypeColor(user.tipe_user),
-                    padding: '4px 8px',
+                    padding: '6px 12px',
                     borderRadius: '6px',
                     fontSize: '12px',
-                    fontWeight: '500'
+                    fontWeight: '600',
+                    border: `1px solid ${getUserTypeColor(user.tipe_user)}20`
                   }}>
                     {getUserTypeLabel(user.tipe_user)}
                   </span>
                 </div>
                 
-                <div style={{ color: '#6b7280', fontSize: '13px' }}>
-                  {user.created_at ? new Date(user.created_at).toLocaleDateString('id-ID') : '-'}
+                <div style={{ 
+                  fontSize: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: user.is_active ? '#10b981' : '#ef4444'
+                  }}></div>
+                  <span style={{ color: user.is_active ? '#10b981' : '#ef4444', fontWeight: '500' }}>
+                    {user.is_active ? 'Aktif' : 'Tidak Aktif'}
+                  </span>
                 </div>
                 
                 <div style={{
                   display: 'flex',
-                  gap: '8px'
+                  gap: '8px',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}>
                   <button
                     onClick={() => openEditModal(user)}
                     style={{
-                      background: 'none',
-                      border: 'none',
+                      background: '#f3f4f6',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
                       cursor: 'pointer',
-                      padding: '4px',
-                      borderRadius: '4px',
-                      color: COLORS.primary
+                      padding: '6px 8px',
+                      color: '#374151',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
                     title="Edit pengguna"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#e5e7eb'
+                      e.currentTarget.style.color = COLORS.primary
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#f3f4f6'
+                      e.currentTarget.style.color = '#374151'
+                    }}
                   >
-                    <Edit size={16} />
+                    <Edit size={14} />
                   </button>
                   <button
                     onClick={() => openDeleteModal(user)}
                     style={{
-                      background: 'none',
-                      border: 'none',
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '6px',
                       cursor: 'pointer',
-                      padding: '4px',
-                      borderRadius: '4px',
-                      color: COLORS.error
+                      padding: '6px 8px',
+                      color: '#dc2626',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
                     title="Hapus pengguna"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#fee2e2'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#fef2f2'
+                    }}
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>
@@ -956,28 +1030,36 @@ const UserManagement: React.FC = () => {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          gap: '8px',
-          marginTop: '20px'
+          gap: '12px',
+          marginTop: '24px'
         }}>
           <button
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
             style={{
-              padding: '8px 16px',
-              border: '1px solid #e5e7eb',
-              borderRadius: '6px',
-              background: 'white',
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === 1 ? '#f9fafb' : 'white',
               cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-              opacity: currentPage === 1 ? 0.5 : 1
+              opacity: currentPage === 1 ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
             }}
           >
-            Sebelumnya
+            ← Sebelumnya
           </button>
           
           <span style={{
-            padding: '8px 16px',
+            padding: '10px 16px',
             fontSize: '14px',
-            color: '#374151'
+            color: '#475569',
+            fontWeight: '500',
+            background: '#f8fafc',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0'
           }}>
             Halaman {currentPage} dari {totalPages}
           </span>
@@ -986,15 +1068,19 @@ const UserManagement: React.FC = () => {
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
             style={{
-              padding: '8px 16px',
-              border: '1px solid #e5e7eb',
-              borderRadius: '6px',
-              background: 'white',
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === totalPages ? '#f9fafb' : 'white',
               cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-              opacity: currentPage === totalPages ? 0.5 : 1
+              opacity: currentPage === totalPages ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
             }}
           >
-            Selanjutnya
+            Selanjutnya →
           </button>
         </div>
       )}
@@ -1294,31 +1380,980 @@ const UserManagement: React.FC = () => {
   )
 }
 
-// Redirect to Student Management Page
-const StudentManagementRedirect: React.FC = () => {
+// Class Management Component
+interface Class {
+  id: number;
+  nama_kelas: string;
+  jenjang: 'SD' | 'SMP' | 'SMA' | 'SMK';
+  tingkat: number;
+  jurusan?: string | null;
+  tahun_ajaran: string;
+  kapasitas: number;
+  is_active: number;
+}
+
+interface ClassFormData {
+  nama_kelas: string;
+  jenjang: 'SD' | 'SMP' | 'SMA' | 'SMK';
+  tingkat: number;
+  jurusan: string;
+  tahun_ajaran: string;
+  kapasitas: number;
+}
+
+const ClassManagement: React.FC = () => {
+  const [classes, setClasses] = useState<Class[]>([])
+  const [loading, setLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalClasses, setTotalClasses] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedClass, setSelectedClass] = useState<Class | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [modalType, setModalType] = useState<'create' | 'edit' | 'delete'>('create')
+  
+  const [formData, setFormData] = useState<ClassFormData>({
+    nama_kelas: '',
+    jenjang: 'SD',
+    tingkat: 1,
+    jurusan: '',
+    tahun_ajaran: '2025/2026',
+    kapasitas: 25
+  })
+
+  const ITEMS_PER_PAGE = 10
+
+  // Get auth token - reuse from UserManagement
+  const getAuthToken = () => {
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData)
+        if (parsed.accessToken) {
+          return parsed.accessToken
+        }
+      } catch (error) {
+        console.log('Error parsing userData:', error)
+      }
+    }
+    
+    const directToken = localStorage.getItem('accessToken')
+    if (directToken) {
+      return directToken
+    }
+    
+    const cookieToken = document.cookie.split('; ').find(row => row.startsWith('accessToken='))?.split('=')[1]
+    if (cookieToken) {
+      return cookieToken
+    }
+    
+    return null
+  }
+
+  // API Functions
+  const apiCall = async (url: string, options: RequestInit = {}) => {
+    const token = getAuthToken()
+    
+    if (!token) {
+      throw new Error('No authentication token found. Please login again.')
+    }
+    
+    console.log('Making API call to:', `http://localhost:3000${url}`)
+    
+    const response = await fetch(`http://localhost:3000${url}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+      },
+      ...options
+    })
+    
+    console.log('API Response status:', response.status)
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.log('API Error response:', errorText)
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
+    }
+    
+    const data = await response.json()
+    console.log('API Response data:', data)
+    return data
+  }
+
+  const fetchClasses = async (page = 1, limit = ITEMS_PER_PAGE, search = '') => {
+    setLoading(true)
+    try {
+      const searchParam = search ? `&search=${encodeURIComponent(search)}` : ''
+      const response = await apiCall(`/api/kelas/list?page=${page}&limit=${limit}${searchParam}`)
+      
+      if (response.success && response.data) {
+        setClasses(response.data)
+        setTotalClasses(response.paging?.total || response.data.length)
+      } else {
+        throw new Error('Invalid API response format')
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      
+      if (errorMessage.includes('No authentication token found')) {
+        alert('Sesi login telah berakhir. Silakan login ulang sebagai admin.')
+        window.location.href = '/admin/login'
+        return
+      }
+      
+      alert(`Error memuat data kelas: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const createClass = async () => {
+    setLoading(true)
+    try {
+      const submitData = { ...formData }
+      // Remove jurusan if empty for SD/SMP
+      if (formData.jenjang === 'SD' || formData.jenjang === 'SMP') {
+        submitData.jurusan = ''
+      }
+      
+      await apiCall('/api/kelas', {
+        method: 'POST',
+        body: JSON.stringify(submitData)
+      })
+      alert('Kelas berhasil dibuat!')
+      fetchClasses(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error creating class:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error membuat kelas: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateClass = async (id: number) => {
+    setLoading(true)
+    try {
+      const submitData = { ...formData }
+      // Remove jurusan if empty for SD/SMP
+      if (formData.jenjang === 'SD' || formData.jenjang === 'SMP') {
+        submitData.jurusan = ''
+      }
+      
+      await apiCall(`/api/kelas/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(submitData)
+      })
+      alert('Kelas berhasil diperbarui!')
+      fetchClasses(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error updating class:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error memperbarui kelas: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteClass = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/kelas/${id}`, {
+        method: 'DELETE'
+      })
+      alert('Kelas berhasil dihapus!')
+      fetchClasses(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error deleting class:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menghapus kelas: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Modal Functions
+  const openCreateModal = () => {
+    setFormData({
+      nama_kelas: '',
+      jenjang: 'SD',
+      tingkat: 1,
+      jurusan: '',
+      tahun_ajaran: '2025/2026',
+      kapasitas: 25
+    })
+    setModalType('create')
+    setShowModal(true)
+  }
+
+  const openEditModal = (classItem: Class) => {
+    setSelectedClass(classItem)
+    setFormData({
+      nama_kelas: classItem.nama_kelas,
+      jenjang: classItem.jenjang,
+      tingkat: classItem.tingkat,
+      jurusan: classItem.jurusan || '',
+      tahun_ajaran: classItem.tahun_ajaran,
+      kapasitas: classItem.kapasitas
+    })
+    setModalType('edit')
+    setShowModal(true)
+  }
+
+  const openDeleteModal = (classItem: Class) => {
+    setSelectedClass(classItem)
+    setModalType('delete')
+    setShowModal(true)
+  }
+
+  const closeModal = () => {
+    setShowModal(false)
+    setSelectedClass(null)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (modalType === 'create') {
+      createClass()
+    } else if (modalType === 'edit' && selectedClass) {
+      updateClass(selectedClass.id)
+    } else if (modalType === 'delete' && selectedClass) {
+      deleteClass(selectedClass.id)
+    }
+  }
+
+  const handleSearch = (searchValue: string) => {
+    setSearchTerm(searchValue)
+    setCurrentPage(1)
+    fetchClasses(1, ITEMS_PER_PAGE, searchValue)
+  }
+
+  // Handle jenjang change to update tingkat options
+  const handleJenjangChange = (jenjang: 'SD' | 'SMP' | 'SMA' | 'SMK') => {
+    let defaultTingkat = 1
+    if (jenjang === 'SMP') defaultTingkat = 7
+    else if (jenjang === 'SMA' || jenjang === 'SMK') defaultTingkat = 10
+    
+    setFormData({
+      ...formData,
+      jenjang,
+      tingkat: defaultTingkat,
+      jurusan: (jenjang === 'SD' || jenjang === 'SMP') ? '' : formData.jurusan
+    })
+  }
+
   React.useEffect(() => {
-    window.location.href = '/admin/students'
-  }, [])
+    fetchClasses(currentPage, ITEMS_PER_PAGE, searchTerm)
+  }, [currentPage])
+
+  const filteredClasses = classes.filter(classItem =>
+    classItem.nama_kelas.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    classItem.jenjang.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    classItem.tahun_ajaran.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const totalPages = Math.ceil(totalClasses / ITEMS_PER_PAGE)
+
+  const getJenjangColor = (jenjang: string) => {
+    switch (jenjang) {
+      case 'SD': return '#059669' // Green
+      case 'SMP': return COLORS.primary // Blue
+      case 'SMA': return '#dc2626' // Red
+      case 'SMK': return '#d97706' // Orange
+      default: return '#6b7280'
+    }
+  }
+
+  const getJenjangBgColor = (jenjang: string) => {
+    switch (jenjang) {
+      case 'SD': return '#f0fdf4' // Light green
+      case 'SMP': return '#f0f9ff' // Light blue
+      case 'SMA': return '#fef2f2' // Light red
+      case 'SMK': return '#fffbeb' // Light orange
+      default: return '#f9fafb'
+    }
+  }
+
+  const getTingkatOptions = (jenjang: 'SD' | 'SMP' | 'SMA' | 'SMK') => {
+    switch (jenjang) {
+      case 'SD': return [1, 2, 3, 4, 5, 6]
+      case 'SMP': return [7, 8, 9]
+      case 'SMA':
+      case 'SMK': return [10, 11, 12]
+      default: return [1]
+    }
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      style={{
+    <div>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: '24px',
+        flexWrap: 'wrap',
+        gap: '16px'
+      }}>
+        <div style={{ flex: 1, minWidth: '200px' }}>
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: COLORS.primary,
+            margin: '0 0 8px 0'
+          }}>
+            Manajemen Kelas
+          </h2>
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            margin: 0
+          }}>
+            Kelola semua kelas di sistem sekolah
+          </p>
+        </div>
+        
+        <button
+          onClick={openCreateModal}
+          style={{
+            background: COLORS.primary,
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s',
+            boxShadow: '0 2px 4px rgba(15, 76, 92, 0.2)'
+          }}
+        >
+          <Plus size={16} />
+          Tambah Kelas
+        </button>
+      </div>
+
+      {/* Search */}
+      <div style={{
         background: COLORS.white,
         borderRadius: '12px',
-        padding: '24px',
+        padding: '16px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+      }}>
+        <div style={{ position: 'relative' }}>
+          <Search 
+            size={20} 
+            color="#6b7280" 
+            style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)'
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Cari kelas berdasarkan nama, jenjang, atau tahun ajaran..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 12px 12px 44px',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none'
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Classes Table */}
+      <div style={{
+        background: COLORS.white,
+        borderRadius: '12px',
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-        textAlign: 'center'
-      }}
-    >
-      <h3 style={{ color: COLORS.primary, margin: '0 0 16px 0' }}>
-        Mengalihkan ke Manajemen Siswa...
-      </h3>
-      <p style={{ color: '#666', margin: 0 }}>
-        Anda akan diarahkan ke halaman manajemen siswa dalam beberapa detik
-      </p>
-    </motion.div>
+        overflow: 'hidden'
+      }}>
+        {loading ? (
+          <div style={{
+            padding: '60px',
+            textAlign: 'center',
+            color: '#6b7280'
+          }}>
+            Memuat data...
+          </div>
+        ) : filteredClasses.length === 0 ? (
+          <div style={{
+            padding: '60px',
+            textAlign: 'center',
+            color: '#6b7280'
+          }}>
+            Tidak ada kelas ditemukan
+          </div>
+        ) : (
+          <>
+            {/* Table Header */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 100px 80px 120px 150px 100px 80px 100px',
+              gap: '16px',
+              padding: '16px 20px',
+              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              borderBottom: '2px solid #e2e8f0',
+              fontSize: '13px',
+              fontWeight: '700',
+              color: '#475569',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              <div>Nama Kelas</div>
+              <div>Jenjang</div>
+              <div>Tingkat</div>
+              <div>Jurusan</div>
+              <div>Tahun Ajaran</div>
+              <div>Kapasitas</div>
+              <div>Status</div>
+              <div style={{ textAlign: 'center' }}>Aksi</div>
+            </div>
+
+            {/* Table Body */}
+            {filteredClasses.map((classItem, index) => (
+              <div
+                key={classItem.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 100px 80px 120px 150px 100px 80px 100px',
+                  gap: '16px',
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #e5e7eb',
+                  fontSize: '14px',
+                  alignItems: 'center',
+                  background: index % 2 === 0 ? 'white' : '#fafbfc',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f0f9ff'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = index % 2 === 0 ? 'white' : '#fafbfc'
+                }}
+              >
+                <div>
+                  <div style={{
+                    fontWeight: '600',
+                    color: '#1f2937'
+                  }}>
+                    {classItem.nama_kelas}
+                  </div>
+                </div>
+                
+                <div>
+                  <span style={{
+                    background: getJenjangBgColor(classItem.jenjang),
+                    color: getJenjangColor(classItem.jenjang),
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    border: `1px solid ${getJenjangColor(classItem.jenjang)}20`
+                  }}>
+                    {classItem.jenjang}
+                  </span>
+                </div>
+                
+                <div style={{ 
+                  color: '#374151',
+                  fontWeight: '500'
+                }}>
+                  {classItem.tingkat}
+                </div>
+                
+                <div style={{ 
+                  color: '#6b7280',
+                  fontSize: '13px'
+                }}>
+                  {classItem.jurusan || '-'}
+                </div>
+                
+                <div style={{ 
+                  color: '#374151',
+                  fontSize: '13px'
+                }}>
+                  {classItem.tahun_ajaran}
+                </div>
+                
+                <div style={{ 
+                  color: '#374151',
+                  fontSize: '13px'
+                }}>
+                  {classItem.kapasitas}
+                </div>
+                
+                <div style={{ 
+                  fontSize: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: classItem.is_active ? '#10b981' : '#ef4444'
+                  }}></div>
+                  <span style={{ color: classItem.is_active ? '#10b981' : '#ef4444', fontWeight: '500' }}>
+                    {classItem.is_active ? 'Aktif' : 'Tidak Aktif'}
+                  </span>
+                </div>
+                
+                <div style={{
+                  display: 'flex',
+                  gap: '8px',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <button
+                    onClick={() => openEditModal(classItem)}
+                    style={{
+                      background: '#f3f4f6',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      padding: '6px 8px',
+                      color: '#374151',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Edit kelas"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#e5e7eb'
+                      e.currentTarget.style.color = COLORS.primary
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#f3f4f6'
+                      e.currentTarget.style.color = '#374151'
+                    }}
+                  >
+                    <Edit size={14} />
+                  </button>
+                  <button
+                    onClick={() => openDeleteModal(classItem)}
+                    style={{
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      padding: '6px 8px',
+                      color: '#dc2626',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Hapus kelas"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#fee2e2'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#fef2f2'
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '12px',
+          marginTop: '24px'
+        }}>
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            style={{
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === 1 ? '#f9fafb' : 'white',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              opacity: currentPage === 1 ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            }}
+          >
+            ← Sebelumnya
+          </button>
+          
+          <span style={{
+            padding: '10px 16px',
+            fontSize: '14px',
+            color: '#475569',
+            fontWeight: '500',
+            background: '#f8fafc',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0'
+          }}>
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            style={{
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === totalPages ? '#f9fafb' : 'white',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              opacity: currentPage === totalPages ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            }}
+          >
+            Selanjutnya →
+          </button>
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              width: '100%',
+              maxWidth: '600px',
+              margin: '20px',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+          >
+            {modalType === 'delete' ? (
+              <div>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 16px 0'
+                }}>
+                  Hapus Kelas
+                </h3>
+                
+                <p style={{
+                  fontSize: '14px',
+                  color: '#6b7280',
+                  margin: '0 0 24px 0',
+                  lineHeight: '1.5'
+                }}>
+                  Apakah Anda yakin ingin menghapus kelas <strong>{selectedClass?.nama_kelas}</strong>? 
+                  Tindakan ini tidak dapat dibatalkan.
+                </p>
+                
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end'
+                }}>
+                  <button
+                    onClick={closeModal}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    style={{
+                      padding: '8px 16px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.error,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menghapus...' : 'Hapus'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 20px 0'
+                }}>
+                  {modalType === 'create' ? 'Tambah Kelas Baru' : 'Edit Kelas'}
+                </h3>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Nama Kelas *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.nama_kelas}
+                      onChange={(e) => setFormData({...formData, nama_kelas: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                      placeholder="Contoh: 7A, XII IPA 1"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Jenjang *
+                    </label>
+                    <select
+                      required
+                      value={formData.jenjang}
+                      onChange={(e) => handleJenjangChange(e.target.value as any)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      <option value="SD">SD</option>
+                      <option value="SMP">SMP</option>
+                      <option value="SMA">SMA</option>
+                      <option value="SMK">SMK</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Tingkat *
+                    </label>
+                    <select
+                      required
+                      value={formData.tingkat}
+                      onChange={(e) => setFormData({...formData, tingkat: parseInt(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      {getTingkatOptions(formData.jenjang).map(level => (
+                        <option key={level} value={level}>{level}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {(formData.jenjang === 'SMA' || formData.jenjang === 'SMK') && (
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Jurusan {formData.jenjang === 'SMA' || formData.jenjang === 'SMK' ? '*' : ''}
+                      </label>
+                      <select
+                        required={formData.jenjang === 'SMA' || formData.jenjang === 'SMK'}
+                        value={formData.jurusan}
+                        onChange={(e) => setFormData({...formData, jurusan: e.target.value})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          background: 'white'
+                        }}
+                      >
+                        <option value="">Pilih Jurusan</option>
+                        <option value="IPA">IPA</option>
+                        <option value="IPS">IPS</option>
+                      </select>
+                    </div>
+                  )}
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Tahun Ajaran *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.tahun_ajaran}
+                      onChange={(e) => setFormData({...formData, tahun_ajaran: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                      placeholder="2025/2026"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Kapasitas *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      max="50"
+                      value={formData.kapasitas}
+                      onChange={(e) => setFormData({...formData, kapasitas: parseInt(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end',
+                  marginTop: '24px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    style={{
+                      padding: '10px 20px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.primary,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menyimpan...' : modalType === 'create' ? 'Tambah' : 'Simpan'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </motion.div>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -1350,31 +2385,1355 @@ const TeacherManagementRedirect: React.FC = () => {
   )
 }
 
-// Redirect to Class Management Page
-const ClassManagementRedirect: React.FC = () => {
+// Helper functions for jenjang colors (shared between components)
+const getJenjangColor = (jenjang: string) => {
+  switch (jenjang) {
+    case 'SD': return '#059669' // Green
+    case 'SMP': return COLORS.primary // Blue
+    case 'SMA': return '#dc2626' // Red
+    case 'SMK': return '#d97706' // Orange
+    default: return '#6b7280'
+  }
+}
+
+const getJenjangBgColor = (jenjang: string) => {
+  switch (jenjang) {
+    case 'SD': return '#f0fdf4' // Light green
+    case 'SMP': return '#f0f9ff' // Light blue
+    case 'SMA': return '#fef2f2' // Light red
+    case 'SMK': return '#fffbeb' // Light orange
+    default: return '#f9fafb'
+  }
+}
+
+// Student Management Component
+interface Student {
+  siswa_id: number;
+  nama_lengkap: string;
+  nis: string;
+  nisn: string;
+  jenis_kelamin: 'L' | 'P';
+  tanggal_lahir: string;
+  tempat_lahir: string;
+  alamat: string;
+  tanggal_masuk: string;
+  status_siswa: string;
+  nama_kelas: string;
+  jenjang: string;
+  tingkat: number;
+  jurusan?: string | null;
+  tahun_ajaran: string;
+}
+
+interface AssignStudentFormData {
+  user_id: number | '';
+  kelas_id: number | '';
+  nis: string;
+  nisn: string;
+  jenis_kelamin: 'L' | 'P';
+  tanggal_lahir: string;
+  tempat_lahir: string;
+  alamat: string;
+  tanggal_masuk: string;
+}
+
+interface TransferStudentFormData {
+  siswa_id: number | '';
+  kelas_id_baru: number | '';
+  tahun_ajaran: string;
+  tanggal_mulai: string;
+  status_kenaikan: 'naik_kelas' | 'tinggal_kelas' | 'pindah_kelas' | 'lulus' | 'keluar';
+  catatan: string;
+}
+
+const StudentManagement: React.FC = () => {
+  const [students, setStudents] = useState<Student[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [classes, setClasses] = useState<Class[]>([])
+  const [loading, setLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalStudents, setTotalStudents] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [modalType, setModalType] = useState<'assign' | 'transfer' | 'delete'>('assign')
+  
+  const [assignFormData, setAssignFormData] = useState<AssignStudentFormData>({
+    user_id: '',
+    kelas_id: '',
+    nis: '',
+    nisn: '',
+    jenis_kelamin: 'L',
+    tanggal_lahir: '',
+    tempat_lahir: '',
+    alamat: '',
+    tanggal_masuk: new Date().toISOString().split('T')[0]
+  })
+
+  const [transferFormData, setTransferFormData] = useState<TransferStudentFormData>({
+    siswa_id: '',
+    kelas_id_baru: '',
+    tahun_ajaran: '2026/2027',
+    tanggal_mulai: new Date().toISOString().split('T')[0],
+    status_kenaikan: 'naik_kelas',
+    catatan: ''
+  })
+
+  const ITEMS_PER_PAGE = 10
+
+  // API Functions (reusing from UserManagement and ClassManagement)
+  const getAuthToken = () => {
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData)
+        if (parsed.accessToken) {
+          return parsed.accessToken
+        }
+      } catch (error) {
+        console.log('Error parsing userData:', error)
+      }
+    }
+    
+    const directToken = localStorage.getItem('accessToken')
+    if (directToken) {
+      return directToken
+    }
+    
+    const cookieToken = document.cookie.split('; ').find(row => row.startsWith('accessToken='))?.split('=')[1]
+    if (cookieToken) {
+      return cookieToken
+    }
+    
+    return null
+  }
+
+  const apiCall = async (url: string, options: RequestInit = {}) => {
+    const token = getAuthToken()
+    
+    if (!token) {
+      throw new Error('No authentication token found. Please login again.')
+    }
+    
+    console.log('Making API call to:', `http://localhost:3000${url}`)
+    
+    const response = await fetch(`http://localhost:3000${url}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+      },
+      ...options
+    })
+    
+    console.log('API Response status:', response.status)
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.log('API Error response:', errorText)
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
+    }
+    
+    const data = await response.json()
+    console.log('API Response data:', data)
+    return data
+  }
+
+  const fetchStudents = async (page = 1, limit = ITEMS_PER_PAGE, search = '') => {
+    setLoading(true)
+    try {
+      const searchParam = search ? `&search=${encodeURIComponent(search)}` : ''
+      const response = await apiCall(`/api/siswa/list?page=${page}&limit=${limit}${searchParam}`)
+      
+      if (response.success && response.data) {
+        setStudents(response.data)
+        setTotalStudents(response.paging?.total || response.data.length)
+      } else {
+        throw new Error('Invalid API response format')
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      
+      if (errorMessage.includes('No authentication token found')) {
+        alert('Sesi login telah berakhir. Silakan login ulang sebagai admin.')
+        window.location.href = '/admin/login'
+        return
+      }
+      
+      alert(`Error memuat data siswa: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchUsers = async () => {
+    try {
+      const response = await apiCall('/api/users/list?limit=1000')
+      if (response.success && response.data) {
+        // Filter only users that could be students (not admin/guru)
+        const studentUsers = response.data.filter((user: User) => 
+          user.tipe_user === 'siswa'
+        )
+        setUsers(studentUsers)
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error)
+    }
+  }
+
+  const fetchClasses = async () => {
+    try {
+      const response = await apiCall('/api/kelas/list?limit=1000')
+      if (response.success && response.data) {
+        setClasses(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error)
+    }
+  }
+
+  const assignStudent = async () => {
+    setLoading(true)
+    try {
+      await apiCall('/api/assign/siswa', {
+        method: 'POST',
+        body: JSON.stringify(assignFormData)
+      })
+      alert('Siswa berhasil ditugaskan ke kelas!')
+      fetchStudents(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error assigning student:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menugaskan siswa: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const transferStudent = async () => {
+    setLoading(true)
+    try {
+      await apiCall('/api/assign/siswa/pindah-kelas', {
+        method: 'POST',
+        body: JSON.stringify(transferFormData)
+      })
+      alert('Siswa berhasil dipindahkan ke kelas baru!')
+      fetchStudents(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error transferring student:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error memindahkan siswa: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteStudent = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/siswa/${id}`, {
+        method: 'DELETE'
+      })
+      alert('Siswa berhasil dihapus!')
+      fetchStudents(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error deleting student:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menghapus siswa: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Modal Functions
+  const openAssignModal = () => {
+    setAssignFormData({
+      user_id: '',
+      kelas_id: '',
+      nis: '',
+      nisn: '',
+      jenis_kelamin: 'L',
+      tanggal_lahir: '',
+      tempat_lahir: '',
+      alamat: '',
+      tanggal_masuk: new Date().toISOString().split('T')[0]
+    })
+    setModalType('assign')
+    setShowModal(true)
+  }
+
+  const openTransferModal = (student: Student) => {
+    setSelectedStudent(student)
+    setTransferFormData({
+      siswa_id: student.siswa_id,
+      kelas_id_baru: '',
+      tahun_ajaran: '2026/2027',
+      tanggal_mulai: new Date().toISOString().split('T')[0],
+      status_kenaikan: 'naik_kelas',
+      catatan: ''
+    })
+    setModalType('transfer')
+    setShowModal(true)
+  }
+
+  const openDeleteModal = (student: Student) => {
+    setSelectedStudent(student)
+    setModalType('delete')
+    setShowModal(true)
+  }
+
+  const closeModal = () => {
+    setShowModal(false)
+    setSelectedStudent(null)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (modalType === 'assign') {
+      assignStudent()
+    } else if (modalType === 'transfer') {
+      transferStudent()
+    } else if (modalType === 'delete' && selectedStudent) {
+      deleteStudent(selectedStudent.siswa_id)
+    }
+  }
+
+  const handleSearch = (searchValue: string) => {
+    setSearchTerm(searchValue)
+    setCurrentPage(1)
+    fetchStudents(1, ITEMS_PER_PAGE, searchValue)
+  }
+
   React.useEffect(() => {
-    window.location.href = '/admin/classes'
+    fetchStudents(currentPage, ITEMS_PER_PAGE, searchTerm)
+  }, [currentPage])
+
+  React.useEffect(() => {
+    fetchUsers()
+    fetchClasses()
   }, [])
 
+  const filteredStudents = students.filter(student =>
+    student.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.nis.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.nama_kelas.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const totalPages = Math.ceil(totalStudents / ITEMS_PER_PAGE)
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'aktif': return '#10b981'
+      case 'tidak_aktif': return '#ef4444'
+      case 'lulus': return '#6366f1'
+      case 'keluar': return '#f59e0b'
+      default: return '#6b7280'
+    }
+  }
+
+  const getStatusKenaikans = () => [
+    { value: 'naik_kelas', label: 'Naik Kelas' },
+    { value: 'tinggal_kelas', label: 'Tinggal Kelas' },
+    { value: 'pindah_kelas', label: 'Pindah Kelas' },
+    { value: 'lulus', label: 'Lulus' },
+    { value: 'keluar', label: 'Keluar' }
+  ]
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      style={{
+    <div>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: '24px',
+        flexWrap: 'wrap',
+        gap: '16px'
+      }}>
+        <div style={{ flex: 1, minWidth: '200px' }}>
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: COLORS.primary,
+            margin: '0 0 8px 0'
+          }}>
+            Manajemen Siswa
+          </h2>
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            margin: 0
+          }}>
+            Kelola siswa dan penugasan kelas
+          </p>
+        </div>
+        
+        <button
+          onClick={openAssignModal}
+          style={{
+            background: COLORS.primary,
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s',
+            boxShadow: '0 2px 4px rgba(15, 76, 92, 0.2)'
+          }}
+        >
+          <Plus size={16} />
+          Tugaskan Siswa
+        </button>
+      </div>
+
+      {/* Search */}
+      <div style={{
         background: COLORS.white,
         borderRadius: '12px',
-        padding: '24px',
+        padding: '16px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+      }}>
+        <div style={{ position: 'relative' }}>
+          <Search 
+            size={20} 
+            color="#6b7280" 
+            style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)'
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Cari siswa berdasarkan nama, NIS, atau kelas..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 12px 12px 44px',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none'
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Students Table */}
+      <div style={{
+        background: COLORS.white,
+        borderRadius: '12px',
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-        textAlign: 'center'
-      }}
-    >
-      <h3 style={{ color: COLORS.primary, margin: '0 0 16px 0' }}>
-        Mengalihkan ke Manajemen Kelas...
-      </h3>
-      <p style={{ color: '#666', margin: 0 }}>
-        Anda akan diarahkan ke halaman manajemen kelas dalam beberapa detik
-      </p>
-    </motion.div>
+        overflow: 'hidden'
+      }}>
+        {loading ? (
+          <div style={{
+            padding: '60px',
+            textAlign: 'center',
+            color: '#6b7280'
+          }}>
+            Memuat data...
+          </div>
+        ) : filteredStudents.length === 0 ? (
+          <div style={{
+            padding: '60px',
+            textAlign: 'center',
+            color: '#6b7280'
+          }}>
+            Tidak ada siswa ditemukan
+          </div>
+        ) : (
+          <>
+            {/* Table Header */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 100px 120px 100px 150px 100px 80px 120px',
+              gap: '16px',
+              padding: '16px 20px',
+              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              borderBottom: '2px solid #e2e8f0',
+              fontSize: '13px',
+              fontWeight: '700',
+              color: '#475569',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              <div>Nama Siswa</div>
+              <div>NIS</div>
+              <div>NISN</div>
+              <div>Gender</div>
+              <div>Kelas</div>
+              <div>Jenjang</div>
+              <div>Status</div>
+              <div style={{ textAlign: 'center' }}>Aksi</div>
+            </div>
+
+            {/* Table Body */}
+            {filteredStudents.map((student, index) => (
+              <div
+                key={student.siswa_id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 100px 120px 100px 150px 100px 80px 120px',
+                  gap: '16px',
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #e5e7eb',
+                  fontSize: '14px',
+                  alignItems: 'center',
+                  background: index % 2 === 0 ? 'white' : '#fafbfc',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f0f9ff'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = index % 2 === 0 ? 'white' : '#fafbfc'
+                }}
+              >
+                <div>
+                  <div style={{
+                    fontWeight: '600',
+                    color: '#1f2937'
+                  }}>
+                    {student.nama_lengkap}
+                  </div>
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#6b7280',
+                    marginTop: '2px'
+                  }}>
+                    {student.tempat_lahir}
+                  </div>
+                </div>
+                
+                <div style={{ 
+                  color: '#374151',
+                  fontWeight: '500',
+                  fontSize: '13px'
+                }}>
+                  {student.nis}
+                </div>
+                
+                <div style={{ 
+                  color: '#6b7280',
+                  fontSize: '13px'
+                }}>
+                  {student.nisn}
+                </div>
+                
+                <div>
+                  <span style={{
+                    background: student.jenis_kelamin === 'L' ? '#dbeafe' : '#fdf2f8',
+                    color: student.jenis_kelamin === 'L' ? '#1d4ed8' : '#ec4899',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}>
+                    {student.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}
+                  </span>
+                </div>
+                
+                <div>
+                  <div style={{
+                    fontWeight: '600',
+                    color: '#374151',
+                    fontSize: '13px'
+                  }}>
+                    {student.nama_kelas}
+                  </div>
+                  <div style={{
+                    fontSize: '11px',
+                    color: '#6b7280'
+                  }}>
+                    {student.tahun_ajaran}
+                  </div>
+                </div>
+                
+                <div>
+                  <span style={{
+                    background: getJenjangBgColor(student.jenjang),
+                    color: getJenjangColor(student.jenjang),
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    border: `1px solid ${getJenjangColor(student.jenjang)}20`
+                  }}>
+                    {student.jenjang}
+                  </span>
+                </div>
+                
+                <div style={{ 
+                  fontSize: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: getStatusColor(student.status_siswa)
+                  }}></div>
+                  <span style={{ 
+                    color: getStatusColor(student.status_siswa), 
+                    fontWeight: '500',
+                    fontSize: '12px'
+                  }}>
+                    {student.status_siswa}
+                  </span>
+                </div>
+                
+                <div style={{
+                  display: 'flex',
+                  gap: '6px',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <button
+                    onClick={() => openTransferModal(student)}
+                    style={{
+                      background: '#f0f9ff',
+                      border: '1px solid #0ea5e9',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      padding: '6px 8px',
+                      color: '#0ea5e9',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Pindah kelas"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#0ea5e9'
+                      e.currentTarget.style.color = 'white'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#f0f9ff'
+                      e.currentTarget.style.color = '#0ea5e9'
+                    }}
+                  >
+                    <ArrowRightLeft size={14} />
+                  </button>
+                  <button
+                    onClick={() => openDeleteModal(student)}
+                    style={{
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      padding: '6px 8px',
+                      color: '#dc2626',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Hapus siswa"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#fee2e2'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#fef2f2'
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '12px',
+          marginTop: '24px'
+        }}>
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            style={{
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === 1 ? '#f9fafb' : 'white',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              opacity: currentPage === 1 ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            }}
+          >
+            ← Sebelumnya
+          </button>
+          
+          <span style={{
+            padding: '10px 16px',
+            fontSize: '14px',
+            color: '#475569',
+            fontWeight: '500',
+            background: '#f8fafc',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0'
+          }}>
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            style={{
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === totalPages ? '#f9fafb' : 'white',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              opacity: currentPage === totalPages ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            }}
+          >
+            Selanjutnya →
+          </button>
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              width: '100%',
+              maxWidth: modalType === 'assign' ? '700px' : '600px',
+              margin: '20px',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+          >
+            {modalType === 'delete' ? (
+              <div>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 16px 0'
+                }}>
+                  Hapus Siswa
+                </h3>
+                
+                <p style={{
+                  fontSize: '14px',
+                  color: '#6b7280',
+                  margin: '0 0 24px 0',
+                  lineHeight: '1.5'
+                }}>
+                  Apakah Anda yakin ingin menghapus siswa <strong>{selectedStudent?.nama_lengkap}</strong>? 
+                  Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait.
+                </p>
+                
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end'
+                }}>
+                  <button
+                    onClick={closeModal}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    style={{
+                      padding: '8px 16px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.error,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menghapus...' : 'Hapus'}
+                  </button>
+                </div>
+              </div>
+            ) : modalType === 'assign' ? (
+              <form onSubmit={handleSubmit}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 20px 0'
+                }}>
+                  Tugaskan Siswa ke Kelas
+                </h3>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Pengguna *
+                    </label>
+                    <select
+                      required
+                      value={assignFormData.user_id}
+                      onChange={(e) => setAssignFormData({...assignFormData, user_id: parseInt(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      <option value="">Pilih Pengguna</option>
+                      {users.map(user => (
+                        <option key={user.id} value={user.id}>
+                          {user.nama_lengkap} ({user.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Kelas *
+                    </label>
+                    <select
+                      required
+                      value={assignFormData.kelas_id}
+                      onChange={(e) => setAssignFormData({...assignFormData, kelas_id: parseInt(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      <option value="">Pilih Kelas</option>
+                      {classes.map(cls => (
+                        <option key={cls.id} value={cls.id}>
+                          {cls.nama_kelas} - {cls.jenjang} Tingkat {cls.tingkat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      NIS *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={assignFormData.nis}
+                      onChange={(e) => setAssignFormData({...assignFormData, nis: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                      placeholder="Nomor Induk Siswa"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      NISN *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={assignFormData.nisn}
+                      onChange={(e) => setAssignFormData({...assignFormData, nisn: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                      placeholder="Nomor Induk Siswa Nasional"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Jenis Kelamin *
+                    </label>
+                    <select
+                      required
+                      value={assignFormData.jenis_kelamin}
+                      onChange={(e) => setAssignFormData({...assignFormData, jenis_kelamin: e.target.value as 'L' | 'P'})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      <option value="L">Laki-laki</option>
+                      <option value="P">Perempuan</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Tanggal Lahir *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={assignFormData.tanggal_lahir}
+                      onChange={(e) => setAssignFormData({...assignFormData, tanggal_lahir: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Tempat Lahir *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={assignFormData.tempat_lahir}
+                      onChange={(e) => setAssignFormData({...assignFormData, tempat_lahir: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                      placeholder="Tempat lahir siswa"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Tanggal Masuk *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={assignFormData.tanggal_masuk}
+                      onChange={(e) => setAssignFormData({...assignFormData, tanggal_masuk: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#374151',
+                    marginBottom: '6px'
+                  }}>
+                    Alamat *
+                  </label>
+                  <textarea
+                    required
+                    value={assignFormData.alamat}
+                    onChange={(e) => setAssignFormData({...assignFormData, alamat: e.target.value})}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      outline: 'none',
+                      minHeight: '80px',
+                      resize: 'vertical',
+                      fontFamily: 'inherit'
+                    }}
+                    placeholder="Alamat lengkap siswa"
+                  />
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end',
+                  marginTop: '24px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    style={{
+                      padding: '10px 20px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.primary,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menyimpan...' : 'Tugaskan'}
+                  </button>
+                </div>
+              </form>
+            ) : modalType === 'transfer' ? (
+              <form onSubmit={handleSubmit}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 20px 0'
+                }}>
+                  Pindah Kelas Siswa
+                </h3>
+
+                <div style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  marginBottom: '20px'
+                }}>
+                  <h4 style={{
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    margin: '0 0 8px 0'
+                  }}>
+                    Data Siswa
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
+                    <strong>{selectedStudent?.nama_lengkap}</strong> - {selectedStudent?.nis}<br/>
+                    Kelas saat ini: {selectedStudent?.nama_kelas} ({selectedStudent?.jenjang})
+                  </p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Kelas Baru *
+                    </label>
+                    <select
+                      required
+                      value={transferFormData.kelas_id_baru}
+                      onChange={(e) => setTransferFormData({...transferFormData, kelas_id_baru: parseInt(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      <option value="">Pilih Kelas Baru</option>
+                      {classes.filter(cls => cls.id !== selectedStudent?.siswa_id).map(cls => (
+                        <option key={cls.id} value={cls.id}>
+                          {cls.nama_kelas} - {cls.jenjang} Tingkat {cls.tingkat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Tahun Ajaran *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={transferFormData.tahun_ajaran}
+                      onChange={(e) => setTransferFormData({...transferFormData, tahun_ajaran: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                      placeholder="2026/2027"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Tanggal Mulai *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={transferFormData.tanggal_mulai}
+                      onChange={(e) => setTransferFormData({...transferFormData, tanggal_mulai: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Status Kenaikan *
+                    </label>
+                    <select
+                      required
+                      value={transferFormData.status_kenaikan}
+                      onChange={(e) => setTransferFormData({...transferFormData, status_kenaikan: e.target.value as any})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      {getStatusKenaikans().map(status => (
+                        <option key={status.value} value={status.value}>
+                          {status.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '16px' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#374151',
+                    marginBottom: '6px'
+                  }}>
+                    Catatan
+                  </label>
+                  <textarea
+                    value={transferFormData.catatan}
+                    onChange={(e) => setTransferFormData({...transferFormData, catatan: e.target.value})}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      outline: 'none',
+                      minHeight: '80px',
+                      resize: 'vertical',
+                      fontFamily: 'inherit'
+                    }}
+                    placeholder="Catatan tambahan tentang perpindahan kelas..."
+                  />
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end',
+                  marginTop: '24px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    style={{
+                      padding: '10px 20px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: '#0ea5e9',
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Memindahkan...' : 'Pindah Kelas'}
+                  </button>
+                </div>
+              </form>
+            ) : null}
+          </motion.div>
+        </div>
+      )}
+    </div>
   )
 }
 
