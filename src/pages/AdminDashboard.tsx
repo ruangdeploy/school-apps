@@ -104,7 +104,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'users', label: 'Pengguna', icon: Users },
     { id: 'students', label: 'Siswa', icon: Users },
-    { id: 'teachers', label: 'Guru', icon: GraduationCap },
+    { id: 'teachers', label: 'Orang Tua', icon: GraduationCap },
     { id: 'classes', label: 'Kelas', icon: FileText },
     { id: 'reports', label: 'Laporan', icon: BarChart3 }
   ]
@@ -396,7 +396,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
         {activeTab === 'users' && <UserManagement />}
 
         {activeTab === 'students' && <StudentManagement />}
-        {activeTab === 'teachers' && <TeacherManagementRedirect />}
+        {activeTab === 'teachers' && <ParentManagement />}
         {activeTab === 'classes' && <ClassManagement />}
         {activeTab === 'reports' && <ReportsRedirect />}
       </div>
@@ -2357,31 +2357,1102 @@ const ClassManagement: React.FC = () => {
   )
 }
 
-// Redirect to Teacher Management Page
-const TeacherManagementRedirect: React.FC = () => {
+// Parent Management Component
+interface Parent {
+  orang_tua_id: number;
+  nama_lengkap: string;
+  nik: string;
+  jenis_kelamin: 'L' | 'P';
+  pekerjaan: string;
+  alamat: string;
+  email: string;
+  no_telepon: string;
+}
+
+interface AssignParentFormData {
+  user_id: number | '';
+  nik: string;
+  jenis_kelamin: 'L' | 'P';
+  pekerjaan: string;
+  alamat: string;
+}
+
+interface AssignParentStudentFormData {
+  orang_tua_id: number | '';
+  siswa_id: number | '';
+  hubungan: 'ayah' | 'ibu' | 'wali' | 'lainnya';
+  is_primary: boolean;
+}
+
+const ParentManagement: React.FC = () => {
+  const [parents, setParents] = useState<Parent[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [students, setStudents] = useState<Student[]>([])
+  const [loading, setLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalParents, setTotalParents] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedParent, setSelectedParent] = useState<Parent | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [modalType, setModalType] = useState<'assign' | 'assign-student' | 'delete'>('assign')
+  
+  const [assignParentFormData, setAssignParentFormData] = useState<AssignParentFormData>({
+    user_id: '',
+    nik: '',
+    jenis_kelamin: 'L',
+    pekerjaan: '',
+    alamat: ''
+  })
+
+  const [assignParentStudentFormData, setAssignParentStudentFormData] = useState<AssignParentStudentFormData>({
+    orang_tua_id: '',
+    siswa_id: '',
+    hubungan: 'ayah',
+    is_primary: true
+  })
+
+  const ITEMS_PER_PAGE = 10
+
+  // API Functions (reusing from other components)
+  const getAuthToken = () => {
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData)
+        if (parsed.accessToken) {
+          return parsed.accessToken
+        }
+      } catch (error) {
+        console.log('Error parsing userData:', error)
+      }
+    }
+    
+    const directToken = localStorage.getItem('accessToken')
+    if (directToken) {
+      return directToken
+    }
+    
+    const cookieToken = document.cookie.split('; ').find(row => row.startsWith('accessToken='))?.split('=')[1]
+    if (cookieToken) {
+      return cookieToken
+    }
+    
+    return null
+  }
+
+  const apiCall = async (url: string, options: RequestInit = {}) => {
+    const token = getAuthToken()
+    
+    if (!token) {
+      throw new Error('No authentication token found. Please login again.')
+    }
+    
+    console.log('Making API call to:', `http://localhost:3000${url}`)
+    
+    const response = await fetch(`http://localhost:3000${url}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+      },
+      ...options
+    })
+    
+    console.log('API Response status:', response.status)
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.log('API Error response:', errorText)
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
+    }
+    
+    const data = await response.json()
+    console.log('API Response data:', data)
+    return data
+  }
+
+  const fetchParents = async (page = 1, limit = ITEMS_PER_PAGE, search = '') => {
+    setLoading(true)
+    try {
+      const searchParam = search ? `&search=${encodeURIComponent(search)}` : ''
+      const response = await apiCall(`/api/orang-tua/list?page=${page}&limit=${limit}${searchParam}`)
+      
+      if (response.success && response.data) {
+        setParents(response.data)
+        setTotalParents(response.paging?.total || response.data.length)
+      } else {
+        throw new Error('Invalid API response format')
+      }
+    } catch (error) {
+      console.error('Error fetching parents:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      
+      if (errorMessage.includes('No authentication token found')) {
+        alert('Sesi login telah berakhir. Silakan login ulang sebagai admin.')
+        window.location.href = '/admin/login'
+        return
+      }
+      
+      alert(`Error memuat data orang tua: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchUsers = async () => {
+    try {
+      const response = await apiCall('/api/users/list?limit=1000')
+      if (response.success && response.data) {
+        // Filter only users that could be parents
+        const parentUsers = response.data.filter((user: User) => 
+          user.tipe_user === 'orang_tua'
+        )
+        setUsers(parentUsers)
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error)
+    }
+  }
+
+  const fetchStudents = async () => {
+    try {
+      const response = await apiCall('/api/siswa/list?limit=1000')
+      if (response.success && response.data) {
+        setStudents(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error)
+    }
+  }
+
+  const assignParent = async () => {
+    setLoading(true)
+    try {
+      await apiCall('/api/assign/orang-tua', {
+        method: 'POST',
+        body: JSON.stringify(assignParentFormData)
+      })
+      alert('Orang tua berhasil ditugaskan!')
+      fetchParents(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error assigning parent:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menugaskan orang tua: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const assignParentStudent = async () => {
+    setLoading(true)
+    try {
+      await apiCall('/api/assign/orang-tua-siswa', {
+        method: 'POST',
+        body: JSON.stringify(assignParentStudentFormData)
+      })
+      alert('Hubungan orang tua-siswa berhasil dibuat!')
+      closeModal()
+    } catch (error) {
+      console.error('Error assigning parent to student:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menghubungkan orang tua-siswa: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteParent = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/orang-tua/${id}`, {
+        method: 'DELETE'
+      })
+      alert('Orang tua berhasil dihapus!')
+      fetchParents(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error deleting parent:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menghapus orang tua: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Modal Functions
+  const openAssignModal = () => {
+    setAssignParentFormData({
+      user_id: '',
+      nik: '',
+      jenis_kelamin: 'L',
+      pekerjaan: '',
+      alamat: ''
+    })
+    setModalType('assign')
+    setShowModal(true)
+  }
+
+  const openAssignStudentModal = (parent: Parent) => {
+    setSelectedParent(parent)
+    setAssignParentStudentFormData({
+      orang_tua_id: parent.orang_tua_id,
+      siswa_id: '',
+      hubungan: 'ayah',
+      is_primary: true
+    })
+    setModalType('assign-student')
+    setShowModal(true)
+  }
+
+  const openDeleteModal = (parent: Parent) => {
+    setSelectedParent(parent)
+    setModalType('delete')
+    setShowModal(true)
+  }
+
+  const closeModal = () => {
+    setShowModal(false)
+    setSelectedParent(null)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (modalType === 'assign') {
+      assignParent()
+    } else if (modalType === 'assign-student') {
+      assignParentStudent()
+    } else if (modalType === 'delete' && selectedParent) {
+      deleteParent(selectedParent.orang_tua_id)
+    }
+  }
+
+  const handleSearch = (searchValue: string) => {
+    setSearchTerm(searchValue)
+    setCurrentPage(1)
+    fetchParents(1, ITEMS_PER_PAGE, searchValue)
+  }
+
   React.useEffect(() => {
-    window.location.href = '/admin/teachers'
+    fetchParents(currentPage, ITEMS_PER_PAGE, searchTerm)
+  }, [currentPage])
+
+  React.useEffect(() => {
+    fetchUsers()
+    fetchStudents()
   }, [])
 
+  const filteredParents = parents.filter(parent =>
+    parent.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    parent.nik.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    parent.email.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const totalPages = Math.ceil(totalParents / ITEMS_PER_PAGE)
+
+  const getHubunganOptions = () => [
+    { value: 'ayah', label: 'Ayah' },
+    { value: 'ibu', label: 'Ibu' },
+    { value: 'wali', label: 'Wali' },
+    { value: 'lainnya', label: 'Lainnya' }
+  ]
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      style={{
+    <div>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: '24px',
+        flexWrap: 'wrap',
+        gap: '16px'
+      }}>
+        <div style={{ flex: 1, minWidth: '200px' }}>
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: COLORS.primary,
+            margin: '0 0 8px 0'
+          }}>
+            Manajemen Orang Tua
+          </h2>
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            margin: 0
+          }}>
+            Kelola orang tua dan hubungan dengan siswa
+          </p>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button
+            onClick={openAssignModal}
+            style={{
+              background: COLORS.primary,
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '12px 20px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 4px rgba(15, 76, 92, 0.2)'
+            }}
+          >
+            <Plus size={16} />
+            Tugaskan Orang Tua
+          </button>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div style={{
         background: COLORS.white,
         borderRadius: '12px',
-        padding: '24px',
+        padding: '16px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+      }}>
+        <div style={{ position: 'relative' }}>
+          <Search 
+            size={20} 
+            color="#6b7280" 
+            style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)'
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Cari orang tua berdasarkan nama, NIK, atau email..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 12px 12px 44px',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none'
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Parents Table */}
+      <div style={{
+        background: COLORS.white,
+        borderRadius: '12px',
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-        textAlign: 'center'
-      }}
-    >
-      <h3 style={{ color: COLORS.primary, margin: '0 0 16px 0' }}>
-        Mengalihkan ke Manajemen Guru...
-      </h3>
-      <p style={{ color: '#666', margin: 0 }}>
-        Anda akan diarahkan ke halaman manajemen guru dalam beberapa detik
-      </p>
-    </motion.div>
+        overflow: 'hidden'
+      }}>
+        {loading ? (
+          <div style={{
+            padding: '60px',
+            textAlign: 'center',
+            color: '#6b7280'
+          }}>
+            Memuat data...
+          </div>
+        ) : filteredParents.length === 0 ? (
+          <div style={{
+            padding: '60px',
+            textAlign: 'center',
+            color: '#6b7280'
+          }}>
+            Tidak ada orang tua ditemukan
+          </div>
+        ) : (
+          <>
+            {/* Table Header */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 150px 100px 150px 120px 1fr 120px',
+              gap: '16px',
+              padding: '16px 20px',
+              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              borderBottom: '2px solid #e2e8f0',
+              fontSize: '13px',
+              fontWeight: '700',
+              color: '#475569',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              <div>Nama Lengkap</div>
+              <div>NIK</div>
+              <div>Gender</div>
+              <div>Pekerjaan</div>
+              <div>No. Telepon</div>
+              <div>Alamat</div>
+              <div style={{ textAlign: 'center' }}>Aksi</div>
+            </div>
+
+            {/* Table Body */}
+            {filteredParents.map((parent, index) => (
+              <div
+                key={parent.orang_tua_id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 150px 100px 150px 120px 1fr 120px',
+                  gap: '16px',
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #e5e7eb',
+                  fontSize: '14px',
+                  alignItems: 'center',
+                  background: index % 2 === 0 ? 'white' : '#fafbfc',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f0f9ff'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = index % 2 === 0 ? 'white' : '#fafbfc'
+                }}
+              >
+                <div>
+                  <div style={{
+                    fontWeight: '600',
+                    color: '#1f2937'
+                  }}>
+                    {parent.nama_lengkap}
+                  </div>
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#6b7280',
+                    marginTop: '2px'
+                  }}>
+                    {parent.email}
+                  </div>
+                </div>
+                
+                <div style={{ 
+                  color: '#374151',
+                  fontWeight: '500',
+                  fontSize: '13px'
+                }}>
+                  {parent.nik}
+                </div>
+                
+                <div>
+                  <span style={{
+                    background: parent.jenis_kelamin === 'L' ? '#dbeafe' : '#fdf2f8',
+                    color: parent.jenis_kelamin === 'L' ? '#1d4ed8' : '#ec4899',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}>
+                    {parent.jenis_kelamin === 'L' ? 'L' : 'P'}
+                  </span>
+                </div>
+                
+                <div style={{
+                  color: '#374151',
+                  fontSize: '13px'
+                }}>
+                  {parent.pekerjaan}
+                </div>
+                
+                <div style={{
+                  color: '#6b7280',
+                  fontSize: '13px'
+                }}>
+                  {parent.no_telepon}
+                </div>
+                
+                <div style={{
+                  color: '#6b7280',
+                  fontSize: '12px',
+                  lineHeight: '1.4'
+                }}>
+                  {parent.alamat}
+                </div>
+                
+                <div style={{
+                  display: 'flex',
+                  gap: '6px',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <button
+                    onClick={() => openAssignStudentModal(parent)}
+                    style={{
+                      background: '#f0f9ff',
+                      border: '1px solid #0ea5e9',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      padding: '6px 8px',
+                      color: '#0ea5e9',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Hubungkan dengan siswa"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#0ea5e9'
+                      e.currentTarget.style.color = 'white'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#f0f9ff'
+                      e.currentTarget.style.color = '#0ea5e9'
+                    }}
+                  >
+                    <Users size={14} />
+                  </button>
+                  <button
+                    onClick={() => openDeleteModal(parent)}
+                    style={{
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      padding: '6px 8px',
+                      color: '#dc2626',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Hapus orang tua"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#fee2e2'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#fef2f2'
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '12px',
+          marginTop: '24px'
+        }}>
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            style={{
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === 1 ? '#f9fafb' : 'white',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              opacity: currentPage === 1 ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            }}
+          >
+            ← Sebelumnya
+          </button>
+          
+          <span style={{
+            padding: '10px 16px',
+            fontSize: '14px',
+            color: '#475569',
+            fontWeight: '500',
+            background: '#f8fafc',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0'
+          }}>
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            style={{
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === totalPages ? '#f9fafb' : 'white',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              opacity: currentPage === totalPages ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            }}
+          >
+            Selanjutnya →
+          </button>
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              width: '100%',
+              maxWidth: modalType === 'assign' ? '600px' : '500px',
+              margin: '20px',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+          >
+            {modalType === 'delete' ? (
+              <div>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 16px 0'
+                }}>
+                  Hapus Orang Tua
+                </h3>
+                
+                <p style={{
+                  fontSize: '14px',
+                  color: '#6b7280',
+                  margin: '0 0 24px 0',
+                  lineHeight: '1.5'
+                }}>
+                  Apakah Anda yakin ingin menghapus orang tua <strong>{selectedParent?.nama_lengkap}</strong>? 
+                  Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait.
+                </p>
+                
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end'
+                }}>
+                  <button
+                    onClick={closeModal}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    style={{
+                      padding: '8px 16px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.error,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menghapus...' : 'Hapus'}
+                  </button>
+                </div>
+              </div>
+            ) : modalType === 'assign' ? (
+              <form onSubmit={handleSubmit}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 20px 0'
+                }}>
+                  Tugaskan Orang Tua
+                </h3>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Pengguna *
+                    </label>
+                    <select
+                      required
+                      value={assignParentFormData.user_id}
+                      onChange={(e) => setAssignParentFormData({...assignParentFormData, user_id: parseInt(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      <option value="">Pilih Pengguna</option>
+                      {users.map(user => (
+                        <option key={user.id} value={user.id}>
+                          {user.nama_lengkap} ({user.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        NIK *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={assignParentFormData.nik}
+                        onChange={(e) => setAssignParentFormData({...assignParentFormData, nik: e.target.value})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none'
+                        }}
+                        placeholder="Nomor Induk Kependudukan"
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Jenis Kelamin *
+                      </label>
+                      <select
+                        required
+                        value={assignParentFormData.jenis_kelamin}
+                        onChange={(e) => setAssignParentFormData({...assignParentFormData, jenis_kelamin: e.target.value as 'L' | 'P'})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          background: 'white'
+                        }}
+                      >
+                        <option value="L">Laki-laki</option>
+                        <option value="P">Perempuan</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Pekerjaan *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={assignParentFormData.pekerjaan}
+                      onChange={(e) => setAssignParentFormData({...assignParentFormData, pekerjaan: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                      placeholder="Pekerjaan orang tua"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Alamat *
+                    </label>
+                    <textarea
+                      required
+                      value={assignParentFormData.alamat}
+                      onChange={(e) => setAssignParentFormData({...assignParentFormData, alamat: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        minHeight: '80px',
+                        resize: 'vertical',
+                        fontFamily: 'inherit'
+                      }}
+                      placeholder="Alamat lengkap orang tua"
+                    />
+                  </div>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end',
+                  marginTop: '24px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    style={{
+                      padding: '10px 20px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.primary,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menyimpan...' : 'Tugaskan'}
+                  </button>
+                </div>
+              </form>
+            ) : modalType === 'assign-student' ? (
+              <form onSubmit={handleSubmit}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 20px 0'
+                }}>
+                  Hubungkan dengan Siswa
+                </h3>
+
+                <div style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  marginBottom: '20px'
+                }}>
+                  <h4 style={{
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    margin: '0 0 8px 0'
+                  }}>
+                    Data Orang Tua
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
+                    <strong>{selectedParent?.nama_lengkap}</strong><br/>
+                    NIK: {selectedParent?.nik}<br/>
+                    Email: {selectedParent?.email}
+                  </p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Siswa *
+                    </label>
+                    <select
+                      required
+                      value={assignParentStudentFormData.siswa_id}
+                      onChange={(e) => setAssignParentStudentFormData({...assignParentStudentFormData, siswa_id: parseInt(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      <option value="">Pilih Siswa</option>
+                      {students.map(student => (
+                        <option key={student.siswa_id} value={student.siswa_id}>
+                          {student.nama_lengkap} - {student.nis} ({student.nama_kelas})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Hubungan *
+                      </label>
+                      <select
+                        required
+                        value={assignParentStudentFormData.hubungan}
+                        onChange={(e) => setAssignParentStudentFormData({...assignParentStudentFormData, hubungan: e.target.value as any})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          background: 'white'
+                        }}
+                      >
+                        {getHubunganOptions().map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Status
+                      </label>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginTop: '10px'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={assignParentStudentFormData.is_primary}
+                          onChange={(e) => setAssignParentStudentFormData({...assignParentStudentFormData, is_primary: e.target.checked})}
+                          style={{ marginRight: '8px' }}
+                        />
+                        <label style={{ fontSize: '14px', color: '#374151' }}>
+                          Orang tua utama
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end',
+                  marginTop: '24px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    style={{
+                      padding: '10px 20px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: '#0ea5e9',
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menghubungkan...' : 'Hubungkan'}
+                  </button>
+                </div>
+              </form>
+            ) : null}
+          </motion.div>
+        </div>
+      )}
+    </div>
   )
 }
 
