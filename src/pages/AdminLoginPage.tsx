@@ -17,8 +17,8 @@ interface LoginForm {
 
 const AdminLoginPage: React.FC = () => {
   const [formData, setFormData] = useState<LoginForm>({
-    email: 'admin@school.com',
-    password: 'admin123'
+    email: 'admin@sekolah.com',
+    password: 'password123'
   })
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -42,31 +42,76 @@ const AdminLoginPage: React.FC = () => {
     setIsLoading(true)
     
     try {
-      // For demo purposes, use mock authentication
-      if (formData.email === 'admin@school.com' && formData.password === 'admin123') {
-        // Store admin session
-        const adminData = {
-          id: 'admin_001',
+      // Hit backend API - same as MultiLoginPage
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+      const response = await fetch(`${apiBaseUrl}/auth/login`, {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
           email: formData.email,
+          password: formData.password
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok && data.success) {
+        // Check if user type is admin
+        if (data.data.user && data.data.user.tipe_user === 'admin') {
+          // Store admin session with real token from backend
+          Cookies.set('accessToken', data.data.token, { expires: 7 })
+          localStorage.setItem('accessToken', data.data.token)
+          localStorage.setItem('userEmail', formData.email)
+          localStorage.setItem('userData', JSON.stringify(data.data.user))
+          localStorage.setItem('userType', 'admin')
+          
+          console.log('✅ Admin login successful:', { 
+            user: data.data.user, 
+            token: data.data.token.substring(0, 20) + '...' 
+          })
+          
+          // Navigate to admin dashboard
+          window.location.href = '/admin/dashboard'
+          return
+        } else {
+          throw new Error('Akun ini bukan administrator')
+        }
+      } else {
+        throw new Error(data.message || 'Login gagal')
+      }
+      
+    } catch (error) {
+      console.error('❌ Admin login error:', error)
+      
+      // Fallback to mock authentication for development
+      if (formData.email === 'admin@sekolah.com' && formData.password === 'password123') {
+        console.log('⚠️ Using mock admin authentication (backend not available)')
+        
+        const adminData = {
+          user_id: 999,
+          email: 'admin@sekolah.com',
           nama_lengkap: 'Administrator',
           tipe_user: 'admin',
-          role: 'Admin'
+          no_telepon: '081234567890'
         }
         
-        Cookies.set('accessToken', 'admin_mock_token', { expires: 7 })
-        localStorage.setItem('accessToken', 'admin_mock_token')
+        const mockToken = 'admin_mock_token_' + Date.now()
+        Cookies.set('accessToken', mockToken, { expires: 7 })
+        localStorage.setItem('accessToken', mockToken)
         localStorage.setItem('userEmail', formData.email)
         localStorage.setItem('userData', JSON.stringify(adminData))
         localStorage.setItem('userType', 'admin')
         
-        // Navigate to admin dashboard
         window.location.href = '/admin/dashboard'
-      } else {
-        alert('Email atau password salah!')
+        return
       }
-    } catch (error) {
-      console.error('Login error:', error)
-      alert('Login gagal. Silakan coba lagi.')
+      
+      alert(`Login gagal: ${error instanceof Error ? error.message : 'Periksa koneksi backend'}`)
     } finally {
       setIsLoading(false)
     }

@@ -20,7 +20,7 @@ const DEMO_ACCOUNTS = {
   siswa: { email: 'andika.anggakusuma90@gmail.com', password: 'password123' },
   guru: { email: 'anca.gimbal@gmail.com', password: 'password123' },
   orangtua: { email: 'facebabybabyface@gmail.com', password: 'password123' },
-  admin: { email: 'admin@school.com', password: 'admin123' }
+  admin: { email: 'admin@sekolah.com', password: 'password123' }
 }
 
 const MultiLoginPage: React.FC = () => {
@@ -75,9 +75,14 @@ const MultiLoginPage: React.FC = () => {
         localStorage.setItem('accessToken', directData.data.token)
         localStorage.setItem('userEmail', formData.email)
         localStorage.setItem('userData', JSON.stringify(directData.data.user))
+        localStorage.setItem('userType', directData.data.user.tipe_user)
         
-        // Navigate to homepage
-        window.location.href = '/home'
+        // Navigate based on user type
+        if (directData.data.user.tipe_user === 'admin') {
+          window.location.href = '/admin/dashboard'
+        } else {
+          window.location.href = '/home'
+        }
         return
       } else {
         throw new Error(directData.message || 'Login gagal')

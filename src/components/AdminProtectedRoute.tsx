@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Shield, AlertTriangle } from 'lucide-react'
+import Cookies from 'js-cookie'
 
 interface AdminProtectedRouteProps {
   children: React.ReactNode
@@ -14,20 +15,34 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
       try {
         const userData = localStorage.getItem('userData')
         const userType = localStorage.getItem('userType')
-        const accessToken = localStorage.getItem('accessToken')
+        const accessToken = localStorage.getItem('accessToken') || Cookies.get('accessToken')
+
+        console.log('🔍 AdminProtectedRoute - Checking access:', {
+          userType,
+          hasToken: !!accessToken,
+          hasUserData: !!userData,
+          path: window.location.pathname
+        })
 
         // Check if user is logged in and is admin
         if (userData && userType === 'admin' && accessToken) {
           const user = JSON.parse(userData)
+          console.log('👤 User data:', user)
+          
           if (user.tipe_user === 'admin' || user.role === 'Admin') {
+            console.log('✅ Admin access granted')
             setIsAuthorized(true)
             return
+          } else {
+            console.log('❌ User is not admin:', { tipe_user: user.tipe_user, role: user.role })
           }
+        } else {
+          console.log('❌ Missing credentials:', { userData: !!userData, userType, accessToken: !!accessToken })
         }
         
         setIsAuthorized(false)
       } catch (error) {
-        console.error('Error checking admin access:', error)
+        console.error('❌ Error checking admin access:', error)
         setIsAuthorized(false)
       }
     }
