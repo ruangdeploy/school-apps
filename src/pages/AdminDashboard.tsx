@@ -727,84 +727,103 @@ const UserManagement: React.FC = () => {
     <div>
       {/* Header */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        background: COLORS.white,
+        borderRadius: '16px',
+        padding: '24px',
         marginBottom: '24px',
-        flexWrap: 'wrap',
-        gap: '16px'
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(0, 0, 0, 0.05)'
       }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <h2 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: COLORS.primary,
-            margin: '0 0 8px 0'
-          }}>
-            Manajemen Pengguna
-          </h2>
-          <p style={{
-            fontSize: '14px',
-            color: '#6b7280',
-            margin: 0
-          }}>
-            Kelola semua pengguna sistem sekolah
-          </p>
-        </div>
-        
         <div style={{
           display: 'flex',
-          gap: '12px',
-          alignItems: 'center'
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '16px'
         }}>
-          <button
-            onClick={openCreateModal}
-            style={{
-              background: COLORS.primary,
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '12px 20px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'all 0.2s',
-              boxShadow: '0 2px 4px rgba(15, 76, 92, 0.2)'
-            }}
-          >
-            <Plus size={16} />
-            Tambah Pengguna
-          </button>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#1e293b',
+              margin: '0 0 8px 0',
+              textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            }}>
+              Manajemen Pengguna
+            </h2>
+            <p style={{
+              fontSize: '16px',
+              color: '#475569',
+              margin: 0,
+              fontWeight: '500'
+            }}>
+              Kelola semua pengguna sistem sekolah
+            </p>
+          </div>
           
-          {/* Debug button - temporary */}
-          <button
-            onClick={() => {
-              const token = getAuthToken()
-              const userType = localStorage.getItem('userType')
-              const userData = localStorage.getItem('userData')
-              console.log('=== DEBUG INFO ===')
-              console.log('Token:', token ? token.substring(0, 20) + '...' : 'None')
-              console.log('User Type:', userType)
-              console.log('User Data:', userData)
-              alert(`Login Status:\nToken: ${token ? 'Found' : 'Missing'}\nUser Type: ${userType}\nUser Data: ${userData ? 'Found' : 'Missing'}`)
-            }}
-            style={{
-              background: '#f3f4f6',
-              color: '#6b7280',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              padding: '8px 12px',
-              fontSize: '12px',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            title="Debug authentication status"
-          >
-            🔍 Debug
-          </button>
+          <div style={{
+            display: 'flex',
+            gap: '12px',
+            alignItems: 'center'
+          }}>
+            <button
+              onClick={openCreateModal}
+              style={{
+                background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`,
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '14px 24px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.3s',
+                boxShadow: '0 4px 12px rgba(15, 76, 92, 0.3)',
+                transform: 'translateY(0)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(15, 76, 92, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 76, 92, 0.3)'
+              }}
+            >
+              <Plus size={16} />
+              Tambah Pengguna
+            </button>
+            
+            {/* Debug button - temporary */}
+            <button
+              onClick={() => {
+                const token = getAuthToken()
+                const userType = localStorage.getItem('userType')
+                const userData = localStorage.getItem('userData')
+                console.log('=== DEBUG INFO ===')
+                console.log('Token:', token ? token.substring(0, 20) + '...' : 'None')
+                console.log('User Type:', userType)
+                console.log('User Data:', userData)
+                alert(`Login Status:\nToken: ${token ? 'Found' : 'Missing'}\nUser Type: ${userType}\nUser Data: ${userData ? 'Found' : 'Missing'}`)
+              }}
+              style={{
+                background: '#f8fafc',
+                color: '#64748b',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '10px 16px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              title="Debug authentication status"
+            >
+              🔍 Debug
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1695,52 +1714,71 @@ const ClassManagement: React.FC = () => {
     <div>
       {/* Header */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        background: COLORS.white,
+        borderRadius: '16px',
+        padding: '24px',
         marginBottom: '24px',
-        flexWrap: 'wrap',
-        gap: '16px'
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(0, 0, 0, 0.05)'
       }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <h2 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: COLORS.primary,
-            margin: '0 0 8px 0'
-          }}>
-            Manajemen Kelas
-          </h2>
-          <p style={{
-            fontSize: '14px',
-            color: '#6b7280',
-            margin: 0
-          }}>
-            Kelola semua kelas di sistem sekolah
-          </p>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#1e293b',
+              margin: '0 0 8px 0',
+              textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            }}>
+              Manajemen Kelas
+            </h2>
+            <p style={{
+              fontSize: '16px',
+              color: '#475569',
+              margin: 0,
+              fontWeight: '500'
+            }}>
+              Kelola semua kelas di sistem sekolah
+            </p>
+          </div>
+          
+          <button
+            onClick={openCreateModal}
+            style={{
+              background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`,
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '14px 24px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.3s',
+              boxShadow: '0 4px 12px rgba(15, 76, 92, 0.3)',
+              transform: 'translateY(0)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(15, 76, 92, 0.4)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 76, 92, 0.3)'
+            }}
+          >
+            <Plus size={16} />
+            Tambah Kelas
+          </button>
         </div>
-        
-        <button
-          onClick={openCreateModal}
-          style={{
-            background: COLORS.primary,
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '12px 20px',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            transition: 'all 0.2s',
-            boxShadow: '0 2px 4px rgba(15, 76, 92, 0.2)'
-          }}
-        >
-          <Plus size={16} />
-          Tambah Kelas
-        </button>
       </div>
 
       {/* Search */}
@@ -2663,53 +2701,72 @@ const ParentManagement: React.FC = () => {
     <div>
       {/* Header */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        background: COLORS.white,
+        borderRadius: '16px',
+        padding: '24px',
         marginBottom: '24px',
-        flexWrap: 'wrap',
-        gap: '16px'
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(0, 0, 0, 0.05)'
       }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <h2 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: COLORS.primary,
-            margin: '0 0 8px 0'
-          }}>
-            Manajemen Orang Tua
-          </h2>
-          <p style={{
-            fontSize: '14px',
-            color: '#6b7280',
-            margin: 0
-          }}>
-            Kelola orang tua dan hubungan dengan siswa
-          </p>
-        </div>
-        
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button
-            onClick={openAssignModal}
-            style={{
-              background: COLORS.primary,
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '12px 20px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'all 0.2s',
-              boxShadow: '0 2px 4px rgba(15, 76, 92, 0.2)'
-            }}
-          >
-            <Plus size={16} />
-            Tugaskan Orang Tua
-          </button>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#1e293b',
+              margin: '0 0 8px 0',
+              textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            }}>
+              Manajemen Orang Tua
+            </h2>
+            <p style={{
+              fontSize: '16px',
+              color: '#475569',
+              margin: 0,
+              fontWeight: '500'
+            }}>
+              Kelola orang tua dan hubungan dengan siswa
+            </p>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={openAssignModal}
+              style={{
+                background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`,
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '14px 24px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.3s',
+                boxShadow: '0 4px 12px rgba(15, 76, 92, 0.3)',
+                transform: 'translateY(0)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(15, 76, 92, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 76, 92, 0.3)'
+              }}
+            >
+              <Plus size={16} />
+              Tugaskan Orang Tua
+            </button>
+          </div>
         </div>
       </div>
 
@@ -3897,94 +3954,120 @@ const TeacherManagement: React.FC = () => {
     <div>
       {/* Header */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        background: COLORS.white,
+        borderRadius: '16px',
+        padding: '24px',
         marginBottom: '24px',
-        flexWrap: 'wrap',
-        gap: '16px'
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(0, 0, 0, 0.05)'
       }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <h2 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: COLORS.primary,
-            margin: '0 0 8px 0'
-          }}>
-            Manajemen Guru
-          </h2>
-          <p style={{
-            fontSize: '14px',
-            color: '#6b7280',
-            margin: 0
-          }}>
-            Kelola guru dan wali kelas
-          </p>
-        </div>
-        
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          {/* View Toggle */}
-          <div style={{
-            display: 'flex',
-            background: '#f1f5f9',
-            borderRadius: '8px',
-            padding: '4px'
-          }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#1e293b',
+              margin: '0 0 8px 0',
+              textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            }}>
+              Manajemen Guru
+            </h2>
+            <p style={{
+              fontSize: '16px',
+              color: '#475569',
+              margin: 0,
+              fontWeight: '500'
+            }}>
+              Kelola guru dan wali kelas
+            </p>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {/* View Toggle */}
+            <div style={{
+              display: 'flex',
+              background: '#f1f5f9',
+              borderRadius: '10px',
+              padding: '6px',
+              border: '1px solid #e2e8f0'
+            }}>
+              <button
+                onClick={() => setActiveView('teachers')}
+                style={{
+                  padding: '10px 18px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  background: activeView === 'teachers' 
+                    ? `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`
+                    : 'transparent',
+                  color: activeView === 'teachers' ? 'white' : '#64748b',
+                  fontSize: '14px',
+                  fontWeight: activeView === 'teachers' ? '600' : '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  boxShadow: activeView === 'teachers' ? '0 2px 8px rgba(15, 76, 92, 0.3)' : 'none'
+                }}
+              >
+                Guru
+              </button>
+              <button
+                onClick={() => setActiveView('wali-kelas')}
+                style={{
+                  padding: '10px 18px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  background: activeView === 'wali-kelas' 
+                    ? `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`
+                    : 'transparent',
+                  color: activeView === 'wali-kelas' ? 'white' : '#64748b',
+                  fontSize: '14px',
+                  fontWeight: activeView === 'wali-kelas' ? '600' : '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  boxShadow: activeView === 'wali-kelas' ? '0 2px 8px rgba(15, 76, 92, 0.3)' : 'none'
+                }}
+              >
+                Wali Kelas
+              </button>
+            </div>
+
             <button
-              onClick={() => setActiveView('teachers')}
+              onClick={activeView === 'teachers' ? openAssignModal : openAssignWaliModal}
               style={{
-                padding: '8px 16px',
+                background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`,
+                color: 'white',
                 border: 'none',
-                borderRadius: '6px',
-                background: activeView === 'teachers' ? COLORS.primary : 'transparent',
-                color: activeView === 'teachers' ? 'white' : '#64748b',
+                borderRadius: '12px',
+                padding: '14px 24px',
                 fontSize: '14px',
-                fontWeight: '500',
+                fontWeight: '600',
                 cursor: 'pointer',
-                transition: 'all 0.2s'
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.3s',
+                boxShadow: '0 4px 12px rgba(15, 76, 92, 0.3)',
+                transform: 'translateY(0)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(15, 76, 92, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 76, 92, 0.3)'
               }}
             >
-              Guru
-            </button>
-            <button
-              onClick={() => setActiveView('wali-kelas')}
-              style={{
-                padding: '8px 16px',
-                border: 'none',
-                borderRadius: '6px',
-                background: activeView === 'wali-kelas' ? COLORS.primary : 'transparent',
-                color: activeView === 'wali-kelas' ? 'white' : '#64748b',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              Wali Kelas
+              <Plus size={16} />
+              {activeView === 'teachers' ? 'Tugaskan Guru' : 'Tugaskan Wali Kelas'}
             </button>
           </div>
-
-          <button
-            onClick={activeView === 'teachers' ? openAssignModal : openAssignWaliModal}
-            style={{
-              background: COLORS.primary,
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '12px 20px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'all 0.2s',
-              boxShadow: '0 2px 4px rgba(15, 76, 92, 0.2)'
-            }}
-          >
-            <Plus size={16} />
-            {activeView === 'teachers' ? 'Tugaskan Guru' : 'Tugaskan Wali Kelas'}
-          </button>
         </div>
       </div>
 
@@ -5262,52 +5345,71 @@ const StudentManagement: React.FC = () => {
     <div>
       {/* Header */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        background: COLORS.white,
+        borderRadius: '16px',
+        padding: '24px',
         marginBottom: '24px',
-        flexWrap: 'wrap',
-        gap: '16px'
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(0, 0, 0, 0.05)'
       }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <h2 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: COLORS.primary,
-            margin: '0 0 8px 0'
-          }}>
-            Manajemen Siswa
-          </h2>
-          <p style={{
-            fontSize: '14px',
-            color: '#6b7280',
-            margin: 0
-          }}>
-            Kelola siswa dan penugasan kelas
-          </p>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#1e293b',
+              margin: '0 0 8px 0',
+              textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            }}>
+              Manajemen Siswa
+            </h2>
+            <p style={{
+              fontSize: '16px',
+              color: '#475569',
+              margin: 0,
+              fontWeight: '500'
+            }}>
+              Kelola siswa dan penugasan kelas
+            </p>
+          </div>
+          
+          <button
+            onClick={openAssignModal}
+            style={{
+              background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`,
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '14px 24px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.3s',
+              boxShadow: '0 4px 12px rgba(15, 76, 92, 0.3)',
+              transform: 'translateY(0)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(15, 76, 92, 0.4)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 76, 92, 0.3)'
+            }}
+          >
+            <Plus size={16} />
+            Tugaskan Siswa
+          </button>
         </div>
-        
-        <button
-          onClick={openAssignModal}
-          style={{
-            background: COLORS.primary,
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '12px 20px',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            transition: 'all 0.2s',
-            boxShadow: '0 2px 4px rgba(15, 76, 92, 0.2)'
-          }}
-        >
-          <Plus size={16} />
-          Tugaskan Siswa
-        </button>
       </div>
 
       {/* Search */}
