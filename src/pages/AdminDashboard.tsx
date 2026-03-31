@@ -68,35 +68,144 @@ interface AdminDashboardProps {}
 const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'teachers' | 'guru' | 'classes' | 'reports'>('overview')
   const [stats] = useState(mockAdminStats)
+  const [loading, setLoading] = useState(false)
+  const [realStats, setRealStats] = useState({
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalClasses: 0,
+    todayAttendance: {
+      present: 0,
+      absent: 0,
+      late: 0,
+      percentage: 0
+    }
+  })
+
+  // Get auth token function
+  const getAuthToken = () => {
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData)
+        if (parsed.accessToken) {
+          return parsed.accessToken
+        }
+      } catch (error) {
+        console.log('Error parsing userData:', error)
+      }
+    }
+    
+    const directToken = localStorage.getItem('accessToken')
+    if (directToken) {
+      return directToken
+    }
+    
+    const cookieToken = document.cookie.split('; ').find(row => row.startsWith('accessToken='))?.split('=')[1]
+    if (cookieToken) {
+      return cookieToken
+    }
+    
+    return null
+  }
+
+  // API call function
+  const apiCall = async (url: string, options: RequestInit = {}) => {
+    const token = getAuthToken()
+    
+    if (!token) {
+      console.error('No authentication token found')
+      return null
+    }
+    
+    try {
+      const response = await fetch(`http://localhost:3000${url}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...options.headers
+        },
+        ...options
+      })
+      
+      if (!response.ok) {
+        console.error('API call failed:', response.status, response.statusText)
+        return null
+      }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error making API call:', error)
+      return null
+    }
+  }
+
+  // Fetch real statistics
+  const fetchRealStats = async () => {
+    setLoading(true)
+    try {
+      // Fetch all data in parallel
+      const [studentsResponse, teachersResponse, classesResponse] = await Promise.all([
+        apiCall('/api/siswa/list?limit=1000'),
+        apiCall('/api/guru/list?limit=1000'),
+        apiCall('/api/kelas/list?limit=1000')
+      ])
+
+      const newStats = {
+        totalStudents: studentsResponse?.paging?.total || 0,
+        totalTeachers: teachersResponse?.paging?.total || 0,
+        totalClasses: classesResponse?.paging?.total || 0,
+        todayAttendance: {
+          present: Math.floor((studentsResponse?.paging?.total || 0) * 0.85), // Mock calculation
+          absent: Math.floor((studentsResponse?.paging?.total || 0) * 0.10),
+          late: Math.floor((studentsResponse?.paging?.total || 0) * 0.05),
+          percentage: 85.0 // Mock percentage
+        }
+      }
+
+      setRealStats(newStats)
+    } catch (error) {
+      console.error('Error fetching statistics:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch data when component mounts and when overview tab is active
+  React.useEffect(() => {
+    if (activeTab === 'overview') {
+      fetchRealStats()
+    }
+  }, [activeTab])
 
   const statCards = [
     {
       title: 'Total Siswa',
-      value: stats.totalStudents,
+      value: loading ? '...' : realStats.totalStudents,
       icon: Users,
       color: COLORS.primary,
       change: '+5 dari bulan lalu'
     },
     {
       title: 'Total Guru',
-      value: stats.totalTeachers,
+      value: loading ? '...' : realStats.totalTeachers,
       icon: GraduationCap,
       color: COLORS.accent,
       change: '+2 dari bulan lalu'
     },
     {
       title: 'Total Kelas',
-      value: stats.totalClasses,
+      value: loading ? '...' : realStats.totalClasses,
       icon: FileText,
       color: COLORS.success,
       change: 'Tidak berubah'
     },
     {
       title: 'Kehadiran Hari Ini',
-      value: `${stats.todayAttendance.percentage}%`,
+      value: loading ? '...' : `${realStats.todayAttendance.percentage}%`,
       icon: UserCheck,
       color: COLORS.warning,
-      change: `${stats.todayAttendance.present}/${stats.totalStudents} hadir`
+      change: loading ? '...' : `${realStats.todayAttendance.present}/${realStats.totalStudents} hadir`
     }
   ]
 
@@ -245,6 +354,59 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
       }}>
         {activeTab === 'overview' && (
           <div>
+            {/* Header with refresh button */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '24px'
+            }}>
+              <div>
+                <h2 style={{
+                  fontSize: '24px',
+                  fontWeight: '700',
+                  color: '#1e293b',
+                  margin: '0 0 4px 0'
+                }}>
+                  Dashboard Overview
+                </h2>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#64748b',
+                  margin: 0
+                }}>
+                  Statistik real-time sistem sekolah
+                </p>
+              </div>
+              
+              <button
+                onClick={fetchRealStats}
+                disabled={loading}
+                style={{
+                  background: loading ? '#f3f4f6' : `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`,
+                  color: loading ? '#9ca3af' : 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <motion.div
+                  animate={loading ? { rotate: 360 } : { rotate: 0 }}
+                  transition={{ duration: 1, repeat: loading ? Infinity : 0, ease: "linear" }}
+                >
+                  ↻
+                </motion.div>
+                {loading ? 'Memuat...' : 'Refresh Data'}
+              </button>
+            </div>
+
             {/* Statistics Cards */}
             <div style={{
               display: 'grid',
@@ -265,13 +427,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                     border: `2px solid transparent`,
                     cursor: 'pointer',
-                    transition: 'all 0.3s'
+                    transition: 'all 0.3s',
+                    opacity: loading ? 0.7 : 1
                   }}
-                  whileHover={{
+                  whileHover={!loading ? {
                     y: -5,
                     boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
                     borderColor: card.color
-                  }}
+                  } : {}}
                 >
                   <div style={{
                     display: 'flex',
@@ -298,7 +461,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                     color: '#1f2937',
                     margin: '0 0 8px 0'
                   }}>
-                    {card.value}
+                    {loading ? (
+                      <motion.div
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                        style={{ 
+                          background: '#e5e7eb',
+                          height: '32px',
+                          width: '80px',
+                          borderRadius: '4px'
+                        }}
+                      />
+                    ) : (
+                      card.value
+                    )}
                   </h3>
                   
                   <p style={{
@@ -315,7 +491,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
                     color: '#9ca3af',
                     margin: 0
                   }}>
-                    {card.change}
+                    {loading ? (
+                      <motion.div
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                        style={{ 
+                          background: '#f3f4f6',
+                          height: '14px',
+                          width: '120px',
+                          borderRadius: '2px'
+                        }}
+                      />
+                    ) : (
+                      card.change
+                    )}
                   </p>
                 </motion.div>
               ))}
@@ -343,6 +532,46 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               </h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  padding: '16px',
+                  background: '#f0f9ff',
+                  borderRadius: '8px',
+                  border: '1px solid #e0f2fe'
+                }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    background: COLORS.primary,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <Users size={20} color="white" />
+                  </div>
+                  
+                  <div style={{ flex: 1 }}>
+                    <p style={{
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#1f2937',
+                      margin: '0 0 4px 0'
+                    }}>
+                      Data statistik telah diperbarui
+                    </p>
+                    <p style={{
+                      fontSize: '12px',
+                      color: '#6b7280',
+                      margin: 0
+                    }}>
+                      {realStats.totalStudents} siswa, {realStats.totalTeachers} guru, {realStats.totalClasses} kelas • {new Date().toLocaleTimeString('id-ID')}
+                    </p>
+                  </div>
+                </div>
+
                 {stats.recentActivities.map((activity) => (
                   <div
                     key={activity.id}
