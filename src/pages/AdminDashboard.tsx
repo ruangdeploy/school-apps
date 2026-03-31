@@ -366,7 +366,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               alignItems: 'center',
               marginBottom: '24px'
             }}>
-              <div>
+              <div style={{
+                background: COLORS.white,
+                borderRadius: '12px',
+                padding: '20px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                border: '1px solid rgba(0, 0, 0, 0.05)'
+              }}>
                 <h2 style={{
                   fontSize: '24px',
                   fontWeight: '700',
