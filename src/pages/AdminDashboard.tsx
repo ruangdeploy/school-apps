@@ -291,6 +291,46 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
               <Settings size={16} />
               Pengaturan
             </button>
+            
+            <button
+              onClick={() => {
+                // Clear all auth data
+                localStorage.removeItem('userData')
+                localStorage.removeItem('accessToken')
+                localStorage.removeItem('userType')
+                localStorage.removeItem('userRole')
+                
+                // Clear cookies
+                document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+                
+                // Redirect to login
+                alert('Anda telah logout dari sistem admin.')
+                window.location.href = '/login'
+              }}
+              style={{
+                background: '#dc2626',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#b91c1c'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#dc2626'
+              }}
+              title="Logout dari sistem admin"
+            >
+              <ArrowRightLeft size={16} />
+              Logout
+            </button>
           </div>
         </div>
       </div>
@@ -772,7 +812,7 @@ const UserManagement: React.FC = () => {
       if (errorMessage.includes('No authentication token found')) {
         alert('Sesi login telah berakhir. Silakan login ulang sebagai admin untuk mengakses manajemen pengguna.')
         // Redirect to login page
-        window.location.href = '/admin/login'
+        window.location.href = '/login'
         return
       }
       
@@ -897,7 +937,7 @@ const UserManagement: React.FC = () => {
     
     if (!token) {
       alert('Anda perlu login sebagai admin untuk mengakses halaman ini.')
-      window.location.href = '/admin/login'
+      window.location.href = '/login'
       return
     }
     
@@ -1745,7 +1785,7 @@ const ClassManagement: React.FC = () => {
       
       if (errorMessage.includes('No authentication token found')) {
         alert('Sesi login telah berakhir. Silakan login ulang sebagai admin.')
-        window.location.href = '/admin/login'
+        window.location.href = '/login'
         return
       }
       
@@ -2754,7 +2794,7 @@ const ParentManagement: React.FC = () => {
       
       if (errorMessage.includes('No authentication token found')) {
         alert('Sesi login telah berakhir. Silakan login ulang sebagai admin.')
-        window.location.href = '/admin/login'
+        window.location.href = '/login'
         return
       }
       
@@ -3906,7 +3946,7 @@ const TeacherManagement: React.FC = () => {
       
       if (errorMessage.includes('No authentication token found')) {
         alert('Sesi login telah berakhir. Silakan login ulang sebagai admin.')
-        window.location.href = '/admin/login'
+        window.location.href = '/login'
         return
       }
       
@@ -5380,7 +5420,7 @@ const StudentManagement: React.FC = () => {
       
       if (errorMessage.includes('No authentication token found')) {
         alert('Sesi login telah berakhir. Silakan login ulang sebagai admin.')
-        window.location.href = '/admin/login'
+        window.location.href = '/login'
         return
       }
       
