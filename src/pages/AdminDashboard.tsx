@@ -252,21 +252,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
             alignItems: 'center',
             gap: '15px'
           }}>
-            <button
-              onClick={() => window.history.back()}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '8px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <ArrowLeft size={24} color={COLORS.primary} />
-            </button>
             <div>
               <h1 style={{
                 fontSize: '24px',
