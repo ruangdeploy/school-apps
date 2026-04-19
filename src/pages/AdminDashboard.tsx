@@ -73,7 +73,7 @@ const mockAdminStats = {
 interface AdminDashboardProps {}
 
 const AdminDashboard: React.FC<AdminDashboardProps> = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'teachers' | 'guru' | 'classes' | 'subjects' | 'schedules' | 'reports'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'teachers' | 'guru' | 'classes' | 'subjects' | 'schedules' | 'extracurricular' | 'reports'>('overview')
   const [stats] = useState(mockAdminStats)
   const [loading, setLoading] = useState(false)
   const [realStats, setRealStats] = useState({
@@ -225,6 +225,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     { id: 'classes', label: 'Kelas', icon: FileText },
     { id: 'subjects', label: 'Mata Pelajaran', icon: BookOpen },
     { id: 'schedules', label: 'Jadwal Pelajaran', icon: Calendar },
+    { id: 'extracurricular', label: 'Ekstrakurikuler', icon: School },
     { id: 'reports', label: 'Laporan', icon: BarChart3 }
   ]
 
@@ -671,6 +672,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
         {activeTab === 'classes' && <ClassManagement />}
         {activeTab === 'subjects' && <SubjectManagement />}
         {activeTab === 'schedules' && <ScheduleManagement />}
+        {activeTab === 'extracurricular' && <ExtracurricularManagement />}
         {activeTab === 'reports' && <ReportsManagement />}
       </div>
     </div>
@@ -8642,6 +8644,1909 @@ const ScheduleManagement: React.FC = () => {
                     }}
                   >
                     {loading ? 'Menyimpan...' : modalType === 'create' ? 'Tambah' : 'Simpan'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </motion.div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Extracurricular Management Component
+interface Extracurricular {
+  id: number;
+  nama_ekstrakurikuler: string;
+  deskripsi: string;
+  guru_id: number;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+  nama_guru: string;
+}
+
+interface StudentExtracurricular {
+  id: number;
+  siswa_id: number;
+  ekstrakurikuler_id: number;
+  tahun_ajaran: string;
+  semester: string;
+  tanggal_daftar: string;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+  nis: string;
+  nama_siswa: string;
+  nama_ekstrakurikuler: string;
+}
+
+interface ExtracurricularSchedule {
+  id: number;
+  ekstrakurikuler_id: number;
+  kelas_id: number;
+  hari: string;
+  jam_mulai: string;
+  jam_selesai: string;
+  lokasi: string;
+  nama_ekstrakurikuler?: string;
+  nama_kelas?: string;
+}
+
+interface ExtracurricularFormData {
+  nama_ekstrakurikuler: string;
+  deskripsi: string;
+  guru_id: number | '';
+  is_active: number;
+}
+
+interface StudentExtracurricularFormData {
+  siswa_id: number | '';
+  ekstrakurikuler_id: number | '';
+  tahun_ajaran: string;
+  semester: string;
+  tanggal_daftar: string;
+  is_active: number;
+}
+
+interface ExtracurricularScheduleFormData {
+  ekstrakurikuler_id: number | '';
+  kelas_id: number | '';
+  hari: string;
+  jam_mulai: string;
+  jam_selesai: string;
+  lokasi: string;
+}
+
+const ExtracurricularManagement: React.FC = () => {
+  const [extracurriculars, setExtracurriculars] = useState<Extracurricular[]>([])
+  const [studentExtracurriculars, setStudentExtracurriculars] = useState<StudentExtracurricular[]>([])
+  const [schedules, setSchedules] = useState<ExtracurricularSchedule[]>([])
+  const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [students, setStudents] = useState<Student[]>([])
+  const [classes, setClasses] = useState<Class[]>([])
+  const [loading, setLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalExtracurriculars, setTotalExtracurriculars] = useState(0)
+  const [totalStudentExtracurriculars, setTotalStudentExtracurriculars] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedExtracurricular, setSelectedExtracurricular] = useState<Extracurricular | null>(null)
+  const [selectedStudentExtracurricular, setSelectedStudentExtracurricular] = useState<StudentExtracurricular | null>(null)
+  const [selectedSchedule, setSelectedSchedule] = useState<ExtracurricularSchedule | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [modalType, setModalType] = useState<'create' | 'edit' | 'delete' | 'assign-student' | 'edit-student' | 'delete-student' | 'create-schedule' | 'edit-schedule' | 'delete-schedule'>('create')
+  const [activeView, setActiveView] = useState<'ekstrakurikuler' | 'siswa' | 'jadwal'>('ekstrakurikuler')
+  
+  const [formData, setFormData] = useState<ExtracurricularFormData>({
+    nama_ekstrakurikuler: '',
+    deskripsi: '',
+    guru_id: '',
+    is_active: 1
+  })
+
+  const [studentFormData, setStudentFormData] = useState<StudentExtracurricularFormData>({
+    siswa_id: '',
+    ekstrakurikuler_id: '',
+    tahun_ajaran: '2025/2026',
+    semester: '1',
+    tanggal_daftar: new Date().toISOString().split('T')[0],
+    is_active: 1
+  })
+
+  const [scheduleFormData, setScheduleFormData] = useState<ExtracurricularScheduleFormData>({
+    ekstrakurikuler_id: '',
+    kelas_id: '',
+    hari: 'Senin',
+    jam_mulai: '15:00:00',
+    jam_selesai: '17:00:00',
+    lokasi: ''
+  })
+
+  const ITEMS_PER_PAGE = 10
+  const hariOptions = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+
+  // Get auth token
+  const getAuthToken = () => {
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData)
+        if (parsed.accessToken) {
+          return parsed.accessToken
+        }
+      } catch (error) {
+        console.log('Error parsing userData:', error)
+      }
+    }
+    
+    const directToken = localStorage.getItem('accessToken')
+    if (directToken) {
+      return directToken
+    }
+    
+    const cookieToken = document.cookie.split('; ').find(row => row.startsWith('accessToken='))?.split('=')[1]
+    if (cookieToken) {
+      return cookieToken
+    }
+    
+    return null
+  }
+
+  // API Functions
+  const apiCall = async (url: string, options: RequestInit = {}) => {
+    const token = getAuthToken()
+    
+    if (!token) {
+      throw new Error('No authentication token found. Please login again.')
+    }
+    
+    const response = await fetch(`http://localhost:3000${url}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+      },
+      ...options
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
+    }
+    
+    const data = await response.json()
+    return data
+  }
+
+  // Fetch Extracurriculars
+  const fetchExtracurriculars = async (page = 1, limit = ITEMS_PER_PAGE, search = '') => {
+    setLoading(true)
+    try {
+      const searchParam = search ? `&search=${encodeURIComponent(search)}` : ''
+      const response = await apiCall(`/api/ekstrakurikuler/list?page=${page}&limit=${limit}${searchParam}`)
+      
+      if (response.success && response.data) {
+        setExtracurriculars(response.data)
+        setTotalExtracurriculars(response.paging?.total || response.data.length)
+      } else {
+        throw new Error('Invalid API response format')
+      }
+    } catch (error) {
+      console.error('Error fetching extracurriculars:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      
+      if (errorMessage.includes('No authentication token found')) {
+        alert('Sesi login telah berakhir. Silakan login ulang sebagai admin.')
+        window.location.href = '/login'
+        return
+      }
+      
+      alert(`Error memuat data ekstrakurikuler: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch Student Extracurriculars
+  const fetchStudentExtracurriculars = async (page = 1, limit = ITEMS_PER_PAGE, search = '') => {
+    setLoading(true)
+    try {
+      const searchParam = search ? `&search=${encodeURIComponent(search)}` : ''
+      const response = await apiCall(`/api/ekstrakurikuler/siswa-ekstrakurikuler/list?page=${page}&limit=${limit}${searchParam}`)
+      
+      if (response.success && response.data) {
+        setStudentExtracurriculars(response.data)
+        setTotalStudentExtracurriculars(response.paging?.total || response.data.length)
+      } else {
+        throw new Error('Invalid API response format')
+      }
+    } catch (error) {
+      console.error('Error fetching student extracurriculars:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error memuat data siswa ekstrakurikuler: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch Schedules
+  const fetchSchedules = async () => {
+    try {
+      const response = await apiCall('/api/jadwal/ekstrakurikuler')
+      if (response.success && response.data) {
+        setSchedules(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching schedules:', error)
+    }
+  }
+
+  // Fetch Teachers
+  const fetchTeachers = async () => {
+    try {
+      const response = await apiCall('/api/guru/list?limit=100')
+      if (response.success && response.data) {
+        setTeachers(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching teachers:', error)
+    }
+  }
+
+  // Fetch Students
+  const fetchStudents = async () => {
+    try {
+      const response = await apiCall('/api/siswa/list?limit=1000')
+      if (response.success && response.data) {
+        setStudents(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error)
+    }
+  }
+
+  // Fetch Classes
+  const fetchClasses = async () => {
+    try {
+      const response = await apiCall('/api/kelas/list?limit=100')
+      if (response.success && response.data) {
+        setClasses(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error)
+    }
+  }
+
+  // CRUD Extracurricular
+  const createExtracurricular = async () => {
+    setLoading(true)
+    try {
+      await apiCall('/api/ekstrakurikuler', {
+        method: 'POST',
+        body: JSON.stringify(formData)
+      })
+      alert('Ekstrakurikuler berhasil dibuat!')
+      fetchExtracurriculars(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error creating extracurricular:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error membuat ekstrakurikuler: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateExtracurricular = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/ekstrakurikuler/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(formData)
+      })
+      alert('Ekstrakurikuler berhasil diperbarui!')
+      fetchExtracurriculars(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error updating extracurricular:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error memperbarui ekstrakurikuler: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteExtracurricular = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/ekstrakurikuler/${id}`, {
+        method: 'DELETE'
+      })
+      alert('Ekstrakurikuler berhasil dihapus!')
+      fetchExtracurriculars(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error deleting extracurricular:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menghapus ekstrakurikuler: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // CRUD Student Extracurricular
+  const assignStudentExtracurricular = async () => {
+    setLoading(true)
+    try {
+      await apiCall('/api/assign/siswa-ekstrakurikuler', {
+        method: 'POST',
+        body: JSON.stringify(studentFormData)
+      })
+      alert('Siswa berhasil didaftarkan ke ekstrakurikuler!')
+      fetchStudentExtracurriculars(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error assigning student:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error mendaftarkan siswa: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateStudentExtracurricular = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/ekstrakurikuler/siswa-ekstrakurikuler/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(studentFormData)
+      })
+      alert('Data siswa ekstrakurikuler berhasil diperbarui!')
+      fetchStudentExtracurriculars(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error updating student extracurricular:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error memperbarui data siswa: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteStudentExtracurricular = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/ekstrakurikuler/siswa-ekstrakurikuler/${id}`, {
+        method: 'DELETE'
+      })
+      alert('Siswa berhasil dihapus dari ekstrakurikuler!')
+      fetchStudentExtracurriculars(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error deleting student extracurricular:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menghapus siswa dari ekstrakurikuler: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // CRUD Schedule
+  const createSchedule = async () => {
+    setLoading(true)
+    try {
+      await apiCall('/api/jadwal/ekstrakurikuler', {
+        method: 'POST',
+        body: JSON.stringify(scheduleFormData)
+      })
+      alert('Jadwal ekstrakurikuler berhasil dibuat!')
+      fetchSchedules()
+      closeModal()
+    } catch (error) {
+      console.error('Error creating schedule:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error membuat jadwal: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateSchedule = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/jadwal/ekstrakurikuler/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(scheduleFormData)
+      })
+      alert('Jadwal ekstrakurikuler berhasil diperbarui!')
+      fetchSchedules()
+      closeModal()
+    } catch (error) {
+      console.error('Error updating schedule:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error memperbarui jadwal: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteSchedule = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/jadwal/ekstrakurikuler/${id}`, {
+        method: 'DELETE'
+      })
+      alert('Jadwal ekstrakurikuler berhasil dihapus!')
+      fetchSchedules()
+      closeModal()
+    } catch (error) {
+      console.error('Error deleting schedule:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menghapus jadwal: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Modal Functions
+  const openCreateModal = () => {
+    setFormData({
+      nama_ekstrakurikuler: '',
+      deskripsi: '',
+      guru_id: '',
+      is_active: 1
+    })
+    setModalType('create')
+    setShowModal(true)
+  }
+
+  const openEditModal = (extracurricular: Extracurricular) => {
+    setSelectedExtracurricular(extracurricular)
+    setFormData({
+      nama_ekstrakurikuler: extracurricular.nama_ekstrakurikuler,
+      deskripsi: extracurricular.deskripsi,
+      guru_id: extracurricular.guru_id,
+      is_active: extracurricular.is_active
+    })
+    setModalType('edit')
+    setShowModal(true)
+  }
+
+  const openDeleteModal = (extracurricular: Extracurricular) => {
+    setSelectedExtracurricular(extracurricular)
+    setModalType('delete')
+    setShowModal(true)
+  }
+
+  const openAssignStudentModal = () => {
+    setStudentFormData({
+      siswa_id: '',
+      ekstrakurikuler_id: '',
+      tahun_ajaran: '2025/2026',
+      semester: '1',
+      tanggal_daftar: new Date().toISOString().split('T')[0],
+      is_active: 1
+    })
+    setModalType('assign-student')
+    setShowModal(true)
+  }
+
+  const openEditStudentModal = (studentEkskul: StudentExtracurricular) => {
+    setSelectedStudentExtracurricular(studentEkskul)
+    setStudentFormData({
+      siswa_id: studentEkskul.siswa_id,
+      ekstrakurikuler_id: studentEkskul.ekstrakurikuler_id,
+      tahun_ajaran: studentEkskul.tahun_ajaran,
+      semester: studentEkskul.semester,
+      tanggal_daftar: studentEkskul.tanggal_daftar,
+      is_active: studentEkskul.is_active
+    })
+    setModalType('edit-student')
+    setShowModal(true)
+  }
+
+  const openDeleteStudentModal = (studentEkskul: StudentExtracurricular) => {
+    setSelectedStudentExtracurricular(studentEkskul)
+    setModalType('delete-student')
+    setShowModal(true)
+  }
+
+  const openCreateScheduleModal = () => {
+    setScheduleFormData({
+      ekstrakurikuler_id: '',
+      kelas_id: '',
+      hari: 'Senin',
+      jam_mulai: '15:00:00',
+      jam_selesai: '17:00:00',
+      lokasi: ''
+    })
+    setModalType('create-schedule')
+    setShowModal(true)
+  }
+
+  const openEditScheduleModal = (schedule: ExtracurricularSchedule) => {
+    setSelectedSchedule(schedule)
+    setScheduleFormData({
+      ekstrakurikuler_id: schedule.ekstrakurikuler_id,
+      kelas_id: schedule.kelas_id,
+      hari: schedule.hari,
+      jam_mulai: schedule.jam_mulai,
+      jam_selesai: schedule.jam_selesai,
+      lokasi: schedule.lokasi
+    })
+    setModalType('edit-schedule')
+    setShowModal(true)
+  }
+
+  const openDeleteScheduleModal = (schedule: ExtracurricularSchedule) => {
+    setSelectedSchedule(schedule)
+    setModalType('delete-schedule')
+    setShowModal(true)
+  }
+
+  const closeModal = () => {
+    setShowModal(false)
+    setSelectedExtracurricular(null)
+    setSelectedStudentExtracurricular(null)
+    setSelectedSchedule(null)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (modalType === 'create') {
+      createExtracurricular()
+    } else if (modalType === 'edit' && selectedExtracurricular) {
+      updateExtracurricular(selectedExtracurricular.id)
+    } else if (modalType === 'delete' && selectedExtracurricular) {
+      deleteExtracurricular(selectedExtracurricular.id)
+    } else if (modalType === 'assign-student') {
+      assignStudentExtracurricular()
+    } else if (modalType === 'edit-student' && selectedStudentExtracurricular) {
+      updateStudentExtracurricular(selectedStudentExtracurricular.id)
+    } else if (modalType === 'delete-student' && selectedStudentExtracurricular) {
+      deleteStudentExtracurricular(selectedStudentExtracurricular.id)
+    } else if (modalType === 'create-schedule') {
+      createSchedule()
+    } else if (modalType === 'edit-schedule' && selectedSchedule) {
+      updateSchedule(selectedSchedule.id)
+    } else if (modalType === 'delete-schedule' && selectedSchedule) {
+      deleteSchedule(selectedSchedule.id)
+    }
+  }
+
+  const handleSearch = (searchValue: string) => {
+    setSearchTerm(searchValue)
+    setCurrentPage(1)
+    if (activeView === 'ekstrakurikuler') {
+      fetchExtracurriculars(1, ITEMS_PER_PAGE, searchValue)
+    } else if (activeView === 'siswa') {
+      fetchStudentExtracurriculars(1, ITEMS_PER_PAGE, searchValue)
+    }
+  }
+
+  React.useEffect(() => {
+    if (activeView === 'ekstrakurikuler') {
+      fetchExtracurriculars(currentPage, ITEMS_PER_PAGE, searchTerm)
+    } else if (activeView === 'siswa') {
+      fetchStudentExtracurriculars(currentPage, ITEMS_PER_PAGE, searchTerm)
+    } else if (activeView === 'jadwal') {
+      fetchSchedules()
+    }
+  }, [currentPage, activeView])
+
+  React.useEffect(() => {
+    fetchTeachers()
+    fetchStudents()
+    fetchClasses()
+    fetchExtracurriculars()
+  }, [])
+
+  const totalPages = activeView === 'ekstrakurikuler' 
+    ? Math.ceil(totalExtracurriculars / ITEMS_PER_PAGE)
+    : Math.ceil(totalStudentExtracurriculars / ITEMS_PER_PAGE)
+
+  const getHariColor = (hari: string) => {
+    switch (hari) {
+      case 'Senin': return '#3b82f6'
+      case 'Selasa': return '#10b981'
+      case 'Rabu': return '#f59e0b'
+      case 'Kamis': return '#8b5cf6'
+      case 'Jumat': return '#ec4899'
+      case 'Sabtu': return '#6366f1'
+      default: return '#6b7280'
+    }
+  }
+
+  const getExtracurricularName = (id: number) => {
+    const ekskul = extracurriculars.find(e => e.id === id)
+    return ekskul ? ekskul.nama_ekstrakurikuler : `Ekskul ${id}`
+  }
+
+  const getClassName = (id: number) => {
+    const kelas = classes.find(c => c.id === id)
+    return kelas ? kelas.nama_kelas : `Kelas ${id}`
+  }
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{
+        background: COLORS.white,
+        borderRadius: '16px',
+        padding: '24px',
+        marginBottom: '24px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(0, 0, 0, 0.05)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#1e293b',
+              margin: '0 0 8px 0',
+              textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            }}>
+              Manajemen Ekstrakurikuler
+            </h2>
+            <p style={{
+              fontSize: '16px',
+              color: '#475569',
+              margin: 0,
+              fontWeight: '500'
+            }}>
+              Kelola ekstrakurikuler, siswa, dan jadwal kegiatan
+            </p>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {/* View Toggle */}
+            <div style={{
+              display: 'flex',
+              background: '#f1f5f9',
+              borderRadius: '10px',
+              padding: '6px',
+              border: '1px solid #e2e8f0'
+            }}>
+              <button
+                onClick={() => { setActiveView('ekstrakurikuler'); setCurrentPage(1); setSearchTerm(''); }}
+                style={{
+                  padding: '10px 16px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  background: activeView === 'ekstrakurikuler' 
+                    ? `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`
+                    : 'transparent',
+                  color: activeView === 'ekstrakurikuler' ? 'white' : '#64748b',
+                  fontSize: '13px',
+                  fontWeight: activeView === 'ekstrakurikuler' ? '600' : '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  boxShadow: activeView === 'ekstrakurikuler' ? '0 2px 8px rgba(15, 76, 92, 0.3)' : 'none'
+                }}
+              >
+                Ekskul
+              </button>
+              <button
+                onClick={() => { setActiveView('siswa'); setCurrentPage(1); setSearchTerm(''); }}
+                style={{
+                  padding: '10px 16px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  background: activeView === 'siswa' 
+                    ? `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`
+                    : 'transparent',
+                  color: activeView === 'siswa' ? 'white' : '#64748b',
+                  fontSize: '13px',
+                  fontWeight: activeView === 'siswa' ? '600' : '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  boxShadow: activeView === 'siswa' ? '0 2px 8px rgba(15, 76, 92, 0.3)' : 'none'
+                }}
+              >
+                Siswa
+              </button>
+              <button
+                onClick={() => { setActiveView('jadwal'); setCurrentPage(1); setSearchTerm(''); }}
+                style={{
+                  padding: '10px 16px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  background: activeView === 'jadwal' 
+                    ? `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`
+                    : 'transparent',
+                  color: activeView === 'jadwal' ? 'white' : '#64748b',
+                  fontSize: '13px',
+                  fontWeight: activeView === 'jadwal' ? '600' : '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  boxShadow: activeView === 'jadwal' ? '0 2px 8px rgba(15, 76, 92, 0.3)' : 'none'
+                }}
+              >
+                Jadwal
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                if (activeView === 'ekstrakurikuler') openCreateModal()
+                else if (activeView === 'siswa') openAssignStudentModal()
+                else if (activeView === 'jadwal') openCreateScheduleModal()
+              }}
+              style={{
+                background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`,
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '14px 24px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.3s',
+                boxShadow: '0 4px 12px rgba(15, 76, 92, 0.3)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(15, 76, 92, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 76, 92, 0.3)'
+              }}
+            >
+              <Plus size={16} />
+              {activeView === 'ekstrakurikuler' ? 'Tambah Ekskul' : 
+               activeView === 'siswa' ? 'Daftarkan Siswa' : 'Tambah Jadwal'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Search (for ekstrakurikuler and siswa views) */}
+      {(activeView === 'ekstrakurikuler' || activeView === 'siswa') && (
+        <div style={{
+          background: COLORS.white,
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '20px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{ position: 'relative' }}>
+            <Search 
+              size={20} 
+              color="#6b7280" 
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)'
+              }}
+            />
+            <input
+              type="text"
+              placeholder={activeView === 'ekstrakurikuler' 
+                ? "Cari ekstrakurikuler..." 
+                : "Cari siswa atau nama ekskul..."}
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 12px 12px 44px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '14px',
+                outline: 'none'
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Ekstrakurikuler View */}
+      {activeView === 'ekstrakurikuler' && (
+        <div style={{
+          background: COLORS.white,
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+          overflow: 'hidden'
+        }}>
+          {loading ? (
+            <div style={{ padding: '60px', textAlign: 'center', color: '#6b7280' }}>
+              Memuat data...
+            </div>
+          ) : extracurriculars.length === 0 ? (
+            <div style={{ padding: '60px', textAlign: 'center', color: '#6b7280' }}>
+              Tidak ada ekstrakurikuler ditemukan
+            </div>
+          ) : (
+            <>
+              {/* Table Header */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 150px 80px 100px',
+                gap: '16px',
+                padding: '16px 20px',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                borderBottom: '2px solid #e2e8f0',
+                fontSize: '13px',
+                fontWeight: '700',
+                color: '#475569',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                <div>Nama Ekstrakurikuler</div>
+                <div>Pembina</div>
+                <div>Deskripsi</div>
+                <div>Status</div>
+                <div style={{ textAlign: 'center' }}>Aksi</div>
+              </div>
+
+              {/* Table Body */}
+              {extracurriculars.map((ekskul, index) => (
+                <div
+                  key={ekskul.id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr 150px 80px 100px',
+                    gap: '16px',
+                    padding: '16px 20px',
+                    borderBottom: '1px solid #e5e7eb',
+                    fontSize: '14px',
+                    alignItems: 'center',
+                    background: index % 2 === 0 ? 'white' : '#fafbfc',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#f0f9ff' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = index % 2 === 0 ? 'white' : '#fafbfc' }}
+                >
+                  <div style={{ fontWeight: '600', color: '#1f2937' }}>
+                    {ekskul.nama_ekstrakurikuler}
+                  </div>
+                  
+                  <div style={{ color: '#475569' }}>
+                    {ekskul.nama_guru}
+                  </div>
+                  
+                  <div style={{ 
+                    color: '#6b7280', 
+                    fontSize: '13px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {ekskul.deskripsi || '-'}
+                  </div>
+                  
+                  <div>
+                    <span style={{
+                      background: ekskul.is_active ? '#dcfce7' : '#fee2e2',
+                      color: ekskul.is_active ? '#166534' : '#dc2626',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: '500'
+                    }}>
+                      {ekskul.is_active ? 'Aktif' : 'Nonaktif'}
+                    </span>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                    <button
+                      onClick={() => openEditModal(ekskul)}
+                      style={{
+                        background: '#f3f4f6',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        padding: '6px 8px',
+                        color: '#374151',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      title="Edit"
+                    >
+                      <Edit size={14} />
+                    </button>
+                    <button
+                      onClick={() => openDeleteModal(ekskul)}
+                      style={{
+                        background: '#fef2f2',
+                        border: '1px solid #fecaca',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        padding: '6px 8px',
+                        color: '#dc2626',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      title="Hapus"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Siswa Ekstrakurikuler View */}
+      {activeView === 'siswa' && (
+        <div style={{
+          background: COLORS.white,
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+          overflow: 'hidden'
+        }}>
+          {loading ? (
+            <div style={{ padding: '60px', textAlign: 'center', color: '#6b7280' }}>
+              Memuat data...
+            </div>
+          ) : studentExtracurriculars.length === 0 ? (
+            <div style={{ padding: '60px', textAlign: 'center', color: '#6b7280' }}>
+              Tidak ada siswa terdaftar di ekstrakurikuler
+            </div>
+          ) : (
+            <>
+              {/* Table Header */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '100px 1fr 1fr 120px 100px 80px 100px',
+                gap: '16px',
+                padding: '16px 20px',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                borderBottom: '2px solid #e2e8f0',
+                fontSize: '13px',
+                fontWeight: '700',
+                color: '#475569',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                <div>NIS</div>
+                <div>Nama Siswa</div>
+                <div>Ekstrakurikuler</div>
+                <div>Tahun Ajaran</div>
+                <div>Semester</div>
+                <div>Status</div>
+                <div style={{ textAlign: 'center' }}>Aksi</div>
+              </div>
+
+              {/* Table Body */}
+              {studentExtracurriculars.map((item, index) => (
+                <div
+                  key={item.id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '100px 1fr 1fr 120px 100px 80px 100px',
+                    gap: '16px',
+                    padding: '16px 20px',
+                    borderBottom: '1px solid #e5e7eb',
+                    fontSize: '14px',
+                    alignItems: 'center',
+                    background: index % 2 === 0 ? 'white' : '#fafbfc',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#f0f9ff' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = index % 2 === 0 ? 'white' : '#fafbfc' }}
+                >
+                  <div style={{ fontFamily: 'monospace', fontSize: '13px', color: COLORS.primary }}>
+                    {item.nis}
+                  </div>
+                  
+                  <div style={{ fontWeight: '600', color: '#1f2937' }}>
+                    {item.nama_siswa}
+                  </div>
+                  
+                  <div style={{ color: '#475569' }}>
+                    {item.nama_ekstrakurikuler}
+                  </div>
+                  
+                  <div style={{ color: '#6b7280', fontSize: '13px' }}>
+                    {item.tahun_ajaran}
+                  </div>
+                  
+                  <div style={{ color: '#6b7280', fontSize: '13px' }}>
+                    Semester {item.semester}
+                  </div>
+                  
+                  <div>
+                    <span style={{
+                      background: item.is_active ? '#dcfce7' : '#fee2e2',
+                      color: item.is_active ? '#166534' : '#dc2626',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: '500'
+                    }}>
+                      {item.is_active ? 'Aktif' : 'Nonaktif'}
+                    </span>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                    <button
+                      onClick={() => openEditStudentModal(item)}
+                      style={{
+                        background: '#f3f4f6',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        padding: '6px 8px',
+                        color: '#374151',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      title="Edit"
+                    >
+                      <Edit size={14} />
+                    </button>
+                    <button
+                      onClick={() => openDeleteStudentModal(item)}
+                      style={{
+                        background: '#fef2f2',
+                        border: '1px solid #fecaca',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        padding: '6px 8px',
+                        color: '#dc2626',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      title="Hapus"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Jadwal Ekstrakurikuler View */}
+      {activeView === 'jadwal' && (
+        <div style={{
+          background: COLORS.white,
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+          overflow: 'hidden',
+          padding: '20px'
+        }}>
+          {loading ? (
+            <div style={{ padding: '60px', textAlign: 'center', color: '#6b7280' }}>
+              Memuat data...
+            </div>
+          ) : schedules.length === 0 ? (
+            <div style={{ padding: '60px', textAlign: 'center', color: '#6b7280' }}>
+              Tidak ada jadwal ekstrakurikuler
+            </div>
+          ) : (
+            <div>
+              {hariOptions.map(hari => {
+                const daySchedules = schedules.filter(s => s.hari === hari).sort((a, b) => a.jam_mulai.localeCompare(b.jam_mulai))
+                if (daySchedules.length === 0) return null
+                
+                return (
+                  <div key={hari} style={{ marginBottom: '24px' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      marginBottom: '16px'
+                    }}>
+                      <div style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: getHariColor(hari)
+                      }} />
+                      <h3 style={{
+                        fontSize: '18px',
+                        fontWeight: '600',
+                        color: '#1f2937',
+                        margin: 0
+                      }}>
+                        {hari}
+                      </h3>
+                      <span style={{
+                        fontSize: '12px',
+                        color: '#6b7280',
+                        background: '#f3f4f6',
+                        padding: '4px 8px',
+                        borderRadius: '4px'
+                      }}>
+                        {daySchedules.length} jadwal
+                      </span>
+                    </div>
+                    
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                      gap: '12px'
+                    }}>
+                      {daySchedules.map(schedule => (
+                        <div
+                          key={schedule.id}
+                          style={{
+                            background: '#f8fafc',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '10px',
+                            padding: '16px',
+                            borderLeft: `4px solid ${getHariColor(hari)}`,
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+                            e.currentTarget.style.transform = 'translateY(-2px)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.boxShadow = 'none'
+                            e.currentTarget.style.transform = 'translateY(0)'
+                          }}
+                        >
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            marginBottom: '12px'
+                          }}>
+                            <div>
+                              <h4 style={{
+                                fontSize: '16px',
+                                fontWeight: '600',
+                                color: '#1f2937',
+                                margin: '0 0 4px 0'
+                              }}>
+                                {getExtracurricularName(schedule.ekstrakurikuler_id)}
+                              </h4>
+                              <p style={{
+                                fontSize: '13px',
+                                color: '#6b7280',
+                                margin: 0
+                              }}>
+                                {getClassName(schedule.kelas_id)}
+                              </p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              <button
+                                onClick={() => openEditScheduleModal(schedule)}
+                                style={{
+                                  background: 'white',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  padding: '4px 6px',
+                                  color: '#374151',
+                                  display: 'flex',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                <Edit size={12} />
+                              </button>
+                              <button
+                                onClick={() => openDeleteScheduleModal(schedule)}
+                                style={{
+                                  background: '#fef2f2',
+                                  border: '1px solid #fecaca',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  padding: '4px 6px',
+                                  color: '#dc2626',
+                                  display: 'flex',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: '8px',
+                            fontSize: '13px'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569' }}>
+                              <Clock size={14} />
+                              {schedule.jam_mulai.slice(0, 5)} - {schedule.jam_selesai.slice(0, 5)}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569' }}>
+                              <FileText size={14} />
+                              {schedule.lokasi}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pagination (for ekstrakurikuler and siswa views) */}
+      {(activeView === 'ekstrakurikuler' || activeView === 'siswa') && totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '12px',
+          marginTop: '24px'
+        }}>
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            style={{
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === 1 ? '#f9fafb' : 'white',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              opacity: currentPage === 1 ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            ← Sebelumnya
+          </button>
+          
+          <span style={{
+            padding: '10px 16px',
+            fontSize: '14px',
+            color: '#475569',
+            fontWeight: '500',
+            background: '#f8fafc',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0'
+          }}>
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            style={{
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === totalPages ? '#f9fafb' : 'white',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              opacity: currentPage === totalPages ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            Selanjutnya →
+          </button>
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              width: '100%',
+              maxWidth: modalType.includes('delete') ? '500px' : '600px',
+              margin: '20px',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+          >
+            {/* Delete Confirmation Modals */}
+            {modalType.includes('delete') ? (
+              <div>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 16px 0'
+                }}>
+                  {modalType === 'delete' ? 'Hapus Ekstrakurikuler' : 
+                   modalType === 'delete-student' ? 'Hapus Siswa dari Ekstrakurikuler' : 
+                   'Hapus Jadwal Ekstrakurikuler'}
+                </h3>
+                
+                <p style={{
+                  fontSize: '14px',
+                  color: '#6b7280',
+                  margin: '0 0 24px 0',
+                  lineHeight: '1.5'
+                }}>
+                  {modalType === 'delete' && (
+                    <>Apakah Anda yakin ingin menghapus ekstrakurikuler <strong>{selectedExtracurricular?.nama_ekstrakurikuler}</strong>?</>
+                  )}
+                  {modalType === 'delete-student' && (
+                    <>Apakah Anda yakin ingin menghapus <strong>{selectedStudentExtracurricular?.nama_siswa}</strong> dari ekstrakurikuler <strong>{selectedStudentExtracurricular?.nama_ekstrakurikuler}</strong>?</>
+                  )}
+                  {modalType === 'delete-schedule' && (
+                    <>Apakah Anda yakin ingin menghapus jadwal <strong>{getExtracurricularName(selectedSchedule?.ekstrakurikuler_id || 0)}</strong> pada hari <strong>{selectedSchedule?.hari}</strong>?</>
+                  )}
+                  <br />Tindakan ini tidak dapat dibatalkan.
+                </p>
+                
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={closeModal}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    style={{
+                      padding: '8px 16px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.error,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menghapus...' : 'Hapus'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 20px 0'
+                }}>
+                  {modalType === 'create' ? 'Tambah Ekstrakurikuler' :
+                   modalType === 'edit' ? 'Edit Ekstrakurikuler' :
+                   modalType === 'assign-student' ? 'Daftarkan Siswa ke Ekstrakurikuler' :
+                   modalType === 'edit-student' ? 'Edit Data Siswa Ekstrakurikuler' :
+                   modalType === 'create-schedule' ? 'Tambah Jadwal Ekstrakurikuler' :
+                   'Edit Jadwal Ekstrakurikuler'}
+                </h3>
+
+                {/* Ekstrakurikuler Form */}
+                {(modalType === 'create' || modalType === 'edit') && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Nama Ekstrakurikuler *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.nama_ekstrakurikuler}
+                        onChange={(e) => setFormData({...formData, nama_ekstrakurikuler: e.target.value})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none'
+                        }}
+                        placeholder="Contoh: Pramuka, Futsal, PMR"
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Pembina/Guru *
+                      </label>
+                      <select
+                        required
+                        value={formData.guru_id}
+                        onChange={(e) => setFormData({...formData, guru_id: parseInt(e.target.value)})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          background: 'white'
+                        }}
+                      >
+                        <option value="">Pilih Pembina</option>
+                        {teachers.map(teacher => (
+                          <option key={teacher.guru_id} value={teacher.guru_id}>
+                            {teacher.nama_lengkap}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Deskripsi
+                      </label>
+                      <textarea
+                        value={formData.deskripsi}
+                        onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          minHeight: '80px',
+                          resize: 'vertical',
+                          fontFamily: 'inherit'
+                        }}
+                        placeholder="Deskripsi kegiatan ekstrakurikuler"
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        cursor: 'pointer'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={formData.is_active === 1}
+                          onChange={(e) => setFormData({...formData, is_active: e.target.checked ? 1 : 0})}
+                          style={{ width: '16px', height: '16px' }}
+                        />
+                        Aktif
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* Student Ekstrakurikuler Form */}
+                {(modalType === 'assign-student' || modalType === 'edit-student') && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Siswa *
+                      </label>
+                      <select
+                        required
+                        value={studentFormData.siswa_id}
+                        onChange={(e) => setStudentFormData({...studentFormData, siswa_id: parseInt(e.target.value)})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          background: 'white'
+                        }}
+                      >
+                        <option value="">Pilih Siswa</option>
+                        {students.map(student => (
+                          <option key={student.siswa_id} value={student.siswa_id}>
+                            {student.nama_lengkap} ({student.nis})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Ekstrakurikuler *
+                      </label>
+                      <select
+                        required
+                        value={studentFormData.ekstrakurikuler_id}
+                        onChange={(e) => setStudentFormData({...studentFormData, ekstrakurikuler_id: parseInt(e.target.value)})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          background: 'white'
+                        }}
+                      >
+                        <option value="">Pilih Ekstrakurikuler</option>
+                        {extracurriculars.map(ekskul => (
+                          <option key={ekskul.id} value={ekskul.id}>
+                            {ekskul.nama_ekstrakurikuler}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Tahun Ajaran *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={studentFormData.tahun_ajaran}
+                        onChange={(e) => setStudentFormData({...studentFormData, tahun_ajaran: e.target.value})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none'
+                        }}
+                        placeholder="2025/2026"
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Semester *
+                      </label>
+                      <select
+                        required
+                        value={studentFormData.semester}
+                        onChange={(e) => setStudentFormData({...studentFormData, semester: e.target.value})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          background: 'white'
+                        }}
+                      >
+                        <option value="1">Semester 1</option>
+                        <option value="2">Semester 2</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Tanggal Daftar
+                      </label>
+                      <input
+                        type="date"
+                        value={studentFormData.tanggal_daftar}
+                        onChange={(e) => setStudentFormData({...studentFormData, tanggal_daftar: e.target.value})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'end' }}>
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        cursor: 'pointer',
+                        paddingBottom: '10px'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={studentFormData.is_active === 1}
+                          onChange={(e) => setStudentFormData({...studentFormData, is_active: e.target.checked ? 1 : 0})}
+                          style={{ width: '16px', height: '16px' }}
+                        />
+                        Aktif
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* Schedule Form */}
+                {(modalType === 'create-schedule' || modalType === 'edit-schedule') && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Ekstrakurikuler *
+                      </label>
+                      <select
+                        required
+                        value={scheduleFormData.ekstrakurikuler_id}
+                        onChange={(e) => setScheduleFormData({...scheduleFormData, ekstrakurikuler_id: parseInt(e.target.value)})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          background: 'white'
+                        }}
+                      >
+                        <option value="">Pilih Ekstrakurikuler</option>
+                        {extracurriculars.map(ekskul => (
+                          <option key={ekskul.id} value={ekskul.id}>
+                            {ekskul.nama_ekstrakurikuler}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Kelas *
+                      </label>
+                      <select
+                        required
+                        value={scheduleFormData.kelas_id}
+                        onChange={(e) => setScheduleFormData({...scheduleFormData, kelas_id: parseInt(e.target.value)})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          background: 'white'
+                        }}
+                      >
+                        <option value="">Pilih Kelas</option>
+                        {classes.map(cls => (
+                          <option key={cls.id} value={cls.id}>
+                            {cls.nama_kelas} - {cls.jenjang}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Hari *
+                      </label>
+                      <select
+                        required
+                        value={scheduleFormData.hari}
+                        onChange={(e) => setScheduleFormData({...scheduleFormData, hari: e.target.value})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none',
+                          background: 'white'
+                        }}
+                      >
+                        {hariOptions.map(hari => (
+                          <option key={hari} value={hari}>{hari}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Lokasi *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={scheduleFormData.lokasi}
+                        onChange={(e) => setScheduleFormData({...scheduleFormData, lokasi: e.target.value})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none'
+                        }}
+                        placeholder="Contoh: Lapangan Utama"
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Jam Mulai *
+                      </label>
+                      <input
+                        type="time"
+                        required
+                        value={scheduleFormData.jam_mulai.slice(0, 5)}
+                        onChange={(e) => setScheduleFormData({...scheduleFormData, jam_mulai: e.target.value + ':00'})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#374151',
+                        marginBottom: '6px'
+                      }}>
+                        Jam Selesai *
+                      </label>
+                      <input
+                        type="time"
+                        required
+                        value={scheduleFormData.jam_selesai.slice(0, 5)}
+                        onChange={(e) => setScheduleFormData({...scheduleFormData, jam_selesai: e.target.value + ':00'})}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end',
+                  marginTop: '24px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    style={{
+                      padding: '10px 20px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.primary,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menyimpan...' : 
+                     (modalType === 'create' || modalType === 'assign-student' || modalType === 'create-schedule') ? 'Tambah' : 'Simpan'}
                   </button>
                 </div>
               </form>
