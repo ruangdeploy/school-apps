@@ -18,6 +18,8 @@ import {
   Download,
   Calendar,
   School,
+  BookOpen,
+  Clock,
   TrendingUp,
   TrendingDown
 } from 'lucide-react'
@@ -71,7 +73,7 @@ const mockAdminStats = {
 interface AdminDashboardProps {}
 
 const AdminDashboard: React.FC<AdminDashboardProps> = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'teachers' | 'guru' | 'classes' | 'reports'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'students' | 'teachers' | 'guru' | 'classes' | 'subjects' | 'schedules' | 'reports'>('overview')
   const [stats] = useState(mockAdminStats)
   const [loading, setLoading] = useState(false)
   const [realStats, setRealStats] = useState({
@@ -221,6 +223,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     { id: 'teachers', label: 'Orang Tua', icon: GraduationCap },
     { id: 'guru', label: 'Guru', icon: UserCheck },
     { id: 'classes', label: 'Kelas', icon: FileText },
+    { id: 'subjects', label: 'Mata Pelajaran', icon: BookOpen },
+    { id: 'schedules', label: 'Jadwal Pelajaran', icon: Calendar },
     { id: 'reports', label: 'Laporan', icon: BarChart3 }
   ]
 
@@ -665,6 +669,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
         {activeTab === 'teachers' && <ParentManagement />}
         {activeTab === 'guru' && <TeacherManagement />}
         {activeTab === 'classes' && <ClassManagement />}
+        {activeTab === 'subjects' && <SubjectManagement />}
+        {activeTab === 'schedules' && <ScheduleManagement />}
         {activeTab === 'reports' && <ReportsManagement />}
       </div>
     </div>
@@ -6612,6 +6618,2034 @@ const StudentManagement: React.FC = () => {
                 </div>
               </form>
             ) : null}
+          </motion.div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Subject Management Component
+interface Subject {
+  id: number;
+  kode_mapel: string;
+  nama_mapel: string;
+  jenjang: 'SD' | 'SMP' | 'SMA' | 'SMK' | 'ALL';
+  tingkat_min: number;
+  tingkat_max: number;
+  kkm: number;
+  deskripsi: string | null;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface SubjectFormData {
+  kode_mapel: string;
+  nama_mapel: string;
+  jenjang: 'SD' | 'SMP' | 'SMA' | 'SMK' | 'ALL';
+  tingkat_min: number;
+  tingkat_max: number;
+  kkm: number;
+  deskripsi: string;
+  is_active: number;
+}
+
+const SubjectManagement: React.FC = () => {
+  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [loading, setLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalSubjects, setTotalSubjects] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [modalType, setModalType] = useState<'create' | 'edit' | 'delete'>('create')
+  
+  const [formData, setFormData] = useState<SubjectFormData>({
+    kode_mapel: '',
+    nama_mapel: '',
+    jenjang: 'ALL',
+    tingkat_min: 1,
+    tingkat_max: 12,
+    kkm: 75,
+    deskripsi: '',
+    is_active: 1
+  })
+
+  const ITEMS_PER_PAGE = 20
+
+  // Get auth token
+  const getAuthToken = () => {
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData)
+        if (parsed.accessToken) {
+          return parsed.accessToken
+        }
+      } catch (error) {
+        console.log('Error parsing userData:', error)
+      }
+    }
+    
+    const directToken = localStorage.getItem('accessToken')
+    if (directToken) {
+      return directToken
+    }
+    
+    const cookieToken = document.cookie.split('; ').find(row => row.startsWith('accessToken='))?.split('=')[1]
+    if (cookieToken) {
+      return cookieToken
+    }
+    
+    return null
+  }
+
+  // API Functions
+  const apiCall = async (url: string, options: RequestInit = {}) => {
+    const token = getAuthToken()
+    
+    if (!token) {
+      throw new Error('No authentication token found. Please login again.')
+    }
+    
+    const response = await fetch(`http://localhost:3000${url}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+      },
+      ...options
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
+    }
+    
+    const data = await response.json()
+    return data
+  }
+
+  const fetchSubjects = async (page = 1, limit = ITEMS_PER_PAGE, search = '') => {
+    setLoading(true)
+    try {
+      const searchParam = search ? `&search=${encodeURIComponent(search)}` : ''
+      const response = await apiCall(`/api/mata-pelajaran/list?page=${page}&limit=${limit}${searchParam}`)
+      
+      if (response.success && response.data) {
+        setSubjects(response.data)
+        setTotalSubjects(response.paging?.total || response.data.length)
+      } else {
+        throw new Error('Invalid API response format')
+      }
+    } catch (error) {
+      console.error('Error fetching subjects:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      
+      if (errorMessage.includes('No authentication token found')) {
+        alert('Sesi login telah berakhir. Silakan login ulang sebagai admin.')
+        window.location.href = '/login'
+        return
+      }
+      
+      alert(`Error memuat data mata pelajaran: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const createSubject = async () => {
+    setLoading(true)
+    try {
+      await apiCall('/api/mata-pelajaran', {
+        method: 'POST',
+        body: JSON.stringify(formData)
+      })
+      alert('Mata pelajaran berhasil dibuat!')
+      fetchSubjects(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error creating subject:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error membuat mata pelajaran: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateSubject = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/mata-pelajaran/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(formData)
+      })
+      alert('Mata pelajaran berhasil diperbarui!')
+      fetchSubjects(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error updating subject:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error memperbarui mata pelajaran: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteSubject = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/mata-pelajaran/${id}`, {
+        method: 'DELETE'
+      })
+      alert('Mata pelajaran berhasil dihapus!')
+      fetchSubjects(currentPage, ITEMS_PER_PAGE, searchTerm)
+      closeModal()
+    } catch (error) {
+      console.error('Error deleting subject:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menghapus mata pelajaran: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Modal Functions
+  const openCreateModal = () => {
+    setFormData({
+      kode_mapel: '',
+      nama_mapel: '',
+      jenjang: 'ALL',
+      tingkat_min: 1,
+      tingkat_max: 12,
+      kkm: 75,
+      deskripsi: '',
+      is_active: 1
+    })
+    setModalType('create')
+    setShowModal(true)
+  }
+
+  const openEditModal = (subject: Subject) => {
+    setSelectedSubject(subject)
+    setFormData({
+      kode_mapel: subject.kode_mapel,
+      nama_mapel: subject.nama_mapel,
+      jenjang: subject.jenjang,
+      tingkat_min: subject.tingkat_min,
+      tingkat_max: subject.tingkat_max,
+      kkm: subject.kkm,
+      deskripsi: subject.deskripsi || '',
+      is_active: subject.is_active
+    })
+    setModalType('edit')
+    setShowModal(true)
+  }
+
+  const openDeleteModal = (subject: Subject) => {
+    setSelectedSubject(subject)
+    setModalType('delete')
+    setShowModal(true)
+  }
+
+  const closeModal = () => {
+    setShowModal(false)
+    setSelectedSubject(null)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (modalType === 'create') {
+      createSubject()
+    } else if (modalType === 'edit' && selectedSubject) {
+      updateSubject(selectedSubject.id)
+    } else if (modalType === 'delete' && selectedSubject) {
+      deleteSubject(selectedSubject.id)
+    }
+  }
+
+  const handleSearch = (searchValue: string) => {
+    setSearchTerm(searchValue)
+    setCurrentPage(1)
+    fetchSubjects(1, ITEMS_PER_PAGE, searchValue)
+  }
+
+  // Handle jenjang change to update tingkat options
+  const handleJenjangChange = (jenjang: 'SD' | 'SMP' | 'SMA' | 'SMK' | 'ALL') => {
+    let tingkatMin = 1
+    let tingkatMax = 12
+    
+    if (jenjang === 'SD') {
+      tingkatMin = 1
+      tingkatMax = 6
+    } else if (jenjang === 'SMP') {
+      tingkatMin = 7
+      tingkatMax = 9
+    } else if (jenjang === 'SMA' || jenjang === 'SMK') {
+      tingkatMin = 10
+      tingkatMax = 12
+    }
+    
+    setFormData({
+      ...formData,
+      jenjang,
+      tingkat_min: tingkatMin,
+      tingkat_max: tingkatMax
+    })
+  }
+
+  React.useEffect(() => {
+    fetchSubjects(currentPage, ITEMS_PER_PAGE, searchTerm)
+  }, [currentPage])
+
+  const filteredSubjects = subjects.filter(subject =>
+    subject.nama_mapel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    subject.kode_mapel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    subject.jenjang.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const totalPages = Math.ceil(totalSubjects / ITEMS_PER_PAGE)
+
+  const getJenjangColor = (jenjang: string) => {
+    switch (jenjang) {
+      case 'SD': return '#059669'
+      case 'SMP': return COLORS.primary
+      case 'SMA': return '#dc2626'
+      case 'SMK': return '#d97706'
+      case 'ALL': return '#7c3aed'
+      default: return '#6b7280'
+    }
+  }
+
+  const getJenjangBgColor = (jenjang: string) => {
+    switch (jenjang) {
+      case 'SD': return '#f0fdf4'
+      case 'SMP': return '#f0f9ff'
+      case 'SMA': return '#fef2f2'
+      case 'SMK': return '#fffbeb'
+      case 'ALL': return '#f5f3ff'
+      default: return '#f9fafb'
+    }
+  }
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{
+        background: COLORS.white,
+        borderRadius: '16px',
+        padding: '24px',
+        marginBottom: '24px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(0, 0, 0, 0.05)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#1e293b',
+              margin: '0 0 8px 0',
+              textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            }}>
+              Manajemen Mata Pelajaran
+            </h2>
+            <p style={{
+              fontSize: '16px',
+              color: '#475569',
+              margin: 0,
+              fontWeight: '500'
+            }}>
+              Kelola data mata pelajaran sekolah
+            </p>
+          </div>
+          
+          <button
+            onClick={openCreateModal}
+            style={{
+              background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`,
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '14px 24px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.3s',
+              boxShadow: '0 4px 12px rgba(15, 76, 92, 0.3)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(15, 76, 92, 0.4)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 76, 92, 0.3)'
+            }}
+          >
+            <Plus size={16} />
+            Tambah Mata Pelajaran
+          </button>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div style={{
+        background: COLORS.white,
+        borderRadius: '12px',
+        padding: '16px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+      }}>
+        <div style={{ position: 'relative' }}>
+          <Search 
+            size={20} 
+            color="#6b7280" 
+            style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)'
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Cari mata pelajaran berdasarkan nama, kode, atau jenjang..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 12px 12px 44px',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none'
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Subjects Table */}
+      <div style={{
+        background: COLORS.white,
+        borderRadius: '12px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        overflow: 'hidden'
+      }}>
+        {loading ? (
+          <div style={{
+            padding: '60px',
+            textAlign: 'center',
+            color: '#6b7280'
+          }}>
+            Memuat data...
+          </div>
+        ) : filteredSubjects.length === 0 ? (
+          <div style={{
+            padding: '60px',
+            textAlign: 'center',
+            color: '#6b7280'
+          }}>
+            Tidak ada mata pelajaran ditemukan
+          </div>
+        ) : (
+          <>
+            {/* Table Header */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '100px 1fr 100px 120px 80px 80px 100px',
+              gap: '16px',
+              padding: '16px 20px',
+              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              borderBottom: '2px solid #e2e8f0',
+              fontSize: '13px',
+              fontWeight: '700',
+              color: '#475569',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              <div>Kode</div>
+              <div>Nama Mata Pelajaran</div>
+              <div>Jenjang</div>
+              <div>Tingkat</div>
+              <div>KKM</div>
+              <div>Status</div>
+              <div style={{ textAlign: 'center' }}>Aksi</div>
+            </div>
+
+            {/* Table Body */}
+            {filteredSubjects.map((subject, index) => (
+              <div
+                key={subject.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '100px 1fr 100px 120px 80px 80px 100px',
+                  gap: '16px',
+                  padding: '16px 20px',
+                  borderBottom: '1px solid #e5e7eb',
+                  fontSize: '14px',
+                  alignItems: 'center',
+                  background: index % 2 === 0 ? 'white' : '#fafbfc',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f0f9ff'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = index % 2 === 0 ? 'white' : '#fafbfc'
+                }}
+              >
+                <div style={{ 
+                  fontWeight: '600',
+                  color: COLORS.primary,
+                  fontFamily: 'monospace',
+                  fontSize: '13px'
+                }}>
+                  {subject.kode_mapel}
+                </div>
+                
+                <div style={{ fontWeight: '500', color: '#1f2937' }}>
+                  {subject.nama_mapel}
+                </div>
+                
+                <div>
+                  <span style={{
+                    background: getJenjangBgColor(subject.jenjang),
+                    color: getJenjangColor(subject.jenjang),
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}>
+                    {subject.jenjang}
+                  </span>
+                </div>
+                
+                <div style={{ color: '#6b7280', fontSize: '13px' }}>
+                  {subject.tingkat_min} - {subject.tingkat_max}
+                </div>
+                
+                <div style={{ 
+                  fontWeight: '600',
+                  color: '#1f2937'
+                }}>
+                  {subject.kkm}
+                </div>
+                
+                <div>
+                  <span style={{
+                    background: subject.is_active ? '#dcfce7' : '#fee2e2',
+                    color: subject.is_active ? '#166534' : '#dc2626',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '500'
+                  }}>
+                    {subject.is_active ? 'Aktif' : 'Nonaktif'}
+                  </span>
+                </div>
+                
+                <div style={{
+                  display: 'flex',
+                  gap: '6px',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <button
+                    onClick={() => openEditModal(subject)}
+                    style={{
+                      background: '#f3f4f6',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      padding: '6px 8px',
+                      color: '#374151',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Edit mata pelajaran"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#e5e7eb'
+                      e.currentTarget.style.color = COLORS.primary
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#f3f4f6'
+                      e.currentTarget.style.color = '#374151'
+                    }}
+                  >
+                    <Edit size={14} />
+                  </button>
+                  <button
+                    onClick={() => openDeleteModal(subject)}
+                    style={{
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      padding: '6px 8px',
+                      color: '#dc2626',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Hapus mata pelajaran"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#fee2e2'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#fef2f2'
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '12px',
+          marginTop: '24px'
+        }}>
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            style={{
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === 1 ? '#f9fafb' : 'white',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              opacity: currentPage === 1 ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            }}
+          >
+            ← Sebelumnya
+          </button>
+          
+          <span style={{
+            padding: '10px 16px',
+            fontSize: '14px',
+            color: '#475569',
+            fontWeight: '500',
+            background: '#f8fafc',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0'
+          }}>
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            style={{
+              padding: '10px 16px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              background: currentPage === totalPages ? '#f9fafb' : 'white',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              opacity: currentPage === totalPages ? 0.5 : 1,
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
+            }}
+          >
+            Selanjutnya →
+          </button>
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              width: '100%',
+              maxWidth: modalType === 'delete' ? '500px' : '600px',
+              margin: '20px',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+          >
+            {modalType === 'delete' ? (
+              <div>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 16px 0'
+                }}>
+                  Hapus Mata Pelajaran
+                </h3>
+                
+                <p style={{
+                  fontSize: '14px',
+                  color: '#6b7280',
+                  margin: '0 0 24px 0',
+                  lineHeight: '1.5'
+                }}>
+                  Apakah Anda yakin ingin menghapus mata pelajaran <strong>{selectedSubject?.nama_mapel}</strong> ({selectedSubject?.kode_mapel})? 
+                  Tindakan ini tidak dapat dibatalkan.
+                </p>
+                
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end'
+                }}>
+                  <button
+                    onClick={closeModal}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    style={{
+                      padding: '8px 16px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.error,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menghapus...' : 'Hapus'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 20px 0'
+                }}>
+                  {modalType === 'create' ? 'Tambah Mata Pelajaran Baru' : 'Edit Mata Pelajaran'}
+                </h3>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Kode Mapel *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.kode_mapel}
+                      onChange={(e) => setFormData({...formData, kode_mapel: e.target.value.toUpperCase()})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        textTransform: 'uppercase'
+                      }}
+                      placeholder="Contoh: MAT, BIN"
+                      maxLength={10}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Nama Mata Pelajaran *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.nama_mapel}
+                      onChange={(e) => setFormData({...formData, nama_mapel: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                      placeholder="Contoh: Matematika"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Jenjang *
+                    </label>
+                    <select
+                      required
+                      value={formData.jenjang}
+                      onChange={(e) => handleJenjangChange(e.target.value as any)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      <option value="ALL">Semua Jenjang</option>
+                      <option value="SD">SD</option>
+                      <option value="SMP">SMP</option>
+                      <option value="SMA">SMA</option>
+                      <option value="SMK">SMK</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      KKM *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      max={100}
+                      value={formData.kkm}
+                      onChange={(e) => setFormData({...formData, kkm: parseInt(e.target.value) || 75})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Tingkat Min *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      max={12}
+                      value={formData.tingkat_min}
+                      onChange={(e) => setFormData({...formData, tingkat_min: parseInt(e.target.value) || 1})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Tingkat Max *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      max={12}
+                      value={formData.tingkat_max}
+                      onChange={(e) => setFormData({...formData, tingkat_max: parseInt(e.target.value) || 12})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Deskripsi
+                    </label>
+                    <textarea
+                      value={formData.deskripsi}
+                      onChange={(e) => setFormData({...formData, deskripsi: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        minHeight: '80px',
+                        resize: 'vertical',
+                        fontFamily: 'inherit'
+                      }}
+                      placeholder="Deskripsi mata pelajaran (opsional)"
+                    />
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      cursor: 'pointer'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={formData.is_active === 1}
+                        onChange={(e) => setFormData({...formData, is_active: e.target.checked ? 1 : 0})}
+                        style={{ width: '16px', height: '16px' }}
+                      />
+                      Aktif
+                    </label>
+                  </div>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end',
+                  marginTop: '24px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    style={{
+                      padding: '10px 20px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.primary,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menyimpan...' : modalType === 'create' ? 'Tambah' : 'Simpan'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </motion.div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Schedule Management Component
+interface Schedule {
+  id: number;
+  kelas_id: number;
+  mata_pelajaran_id: number;
+  guru_id: number;
+  hari: 'Senin' | 'Selasa' | 'Rabu' | 'Kamis' | 'Jumat' | 'Sabtu';
+  jam_mulai: string;
+  jam_selesai: string;
+  tahun_ajaran: string;
+  ruangan: string;
+  is_active: number;
+  created_at: string;
+  nama_mapel: string;
+  nama_guru: string;
+  nama_kelas?: string;
+}
+
+interface ScheduleFormData {
+  kelas_id: number | '';
+  mata_pelajaran_id: number | '';
+  guru_id: number | '';
+  hari: 'Senin' | 'Selasa' | 'Rabu' | 'Kamis' | 'Jumat' | 'Sabtu';
+  jam_mulai: string;
+  jam_selesai: string;
+  tahun_ajaran: string;
+  ruangan: string;
+}
+
+const ScheduleManagement: React.FC = () => {
+  const [schedules, setSchedules] = useState<Schedule[]>([])
+  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [classes, setClasses] = useState<Class[]>([])
+  const [loading, setLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [modalType, setModalType] = useState<'create' | 'edit' | 'delete'>('create')
+  const [filterHari, setFilterHari] = useState<string>('')
+  
+  const [formData, setFormData] = useState<ScheduleFormData>({
+    kelas_id: '',
+    mata_pelajaran_id: '',
+    guru_id: '',
+    hari: 'Senin',
+    jam_mulai: '07:00:00',
+    jam_selesai: '08:30:00',
+    tahun_ajaran: '2025/2026',
+    ruangan: ''
+  })
+
+  const hariOptions = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+
+  // Get auth token
+  const getAuthToken = () => {
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData)
+        if (parsed.accessToken) {
+          return parsed.accessToken
+        }
+      } catch (error) {
+        console.log('Error parsing userData:', error)
+      }
+    }
+    
+    const directToken = localStorage.getItem('accessToken')
+    if (directToken) {
+      return directToken
+    }
+    
+    const cookieToken = document.cookie.split('; ').find(row => row.startsWith('accessToken='))?.split('=')[1]
+    if (cookieToken) {
+      return cookieToken
+    }
+    
+    return null
+  }
+
+  // API Functions
+  const apiCall = async (url: string, options: RequestInit = {}) => {
+    const token = getAuthToken()
+    
+    if (!token) {
+      throw new Error('No authentication token found. Please login again.')
+    }
+    
+    const response = await fetch(`http://localhost:3000${url}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+      },
+      ...options
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
+    }
+    
+    const data = await response.json()
+    return data
+  }
+
+  const fetchSchedules = async () => {
+    setLoading(true)
+    try {
+      const response = await apiCall('/api/jadwal/pelajaran')
+      
+      if (response.success && response.data) {
+        setSchedules(response.data)
+      } else {
+        throw new Error('Invalid API response format')
+      }
+    } catch (error) {
+      console.error('Error fetching schedules:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      
+      if (errorMessage.includes('No authentication token found')) {
+        alert('Sesi login telah berakhir. Silakan login ulang sebagai admin.')
+        window.location.href = '/login'
+        return
+      }
+      
+      alert(`Error memuat data jadwal: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchSubjects = async () => {
+    try {
+      const response = await apiCall('/api/mata-pelajaran/list?limit=100')
+      if (response.success && response.data) {
+        setSubjects(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching subjects:', error)
+    }
+  }
+
+  const fetchTeachers = async () => {
+    try {
+      const response = await apiCall('/api/guru/list?limit=100')
+      if (response.success && response.data) {
+        setTeachers(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching teachers:', error)
+    }
+  }
+
+  const fetchClasses = async () => {
+    try {
+      const response = await apiCall('/api/kelas/list?limit=100')
+      if (response.success && response.data) {
+        setClasses(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error)
+    }
+  }
+
+  const createSchedule = async () => {
+    setLoading(true)
+    try {
+      await apiCall('/api/jadwal/pelajaran', {
+        method: 'POST',
+        body: JSON.stringify(formData)
+      })
+      alert('Jadwal pelajaran berhasil dibuat!')
+      fetchSchedules()
+      closeModal()
+    } catch (error) {
+      console.error('Error creating schedule:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error membuat jadwal: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateSchedule = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/jadwal/pelajaran/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(formData)
+      })
+      alert('Jadwal pelajaran berhasil diperbarui!')
+      fetchSchedules()
+      closeModal()
+    } catch (error) {
+      console.error('Error updating schedule:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error memperbarui jadwal: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteSchedule = async (id: number) => {
+    setLoading(true)
+    try {
+      await apiCall(`/api/jadwal/pelajaran/${id}`, {
+        method: 'DELETE'
+      })
+      alert('Jadwal pelajaran berhasil dihapus!')
+      fetchSchedules()
+      closeModal()
+    } catch (error) {
+      console.error('Error deleting schedule:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Error menghapus jadwal: ${errorMessage}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Modal Functions
+  const openCreateModal = () => {
+    setFormData({
+      kelas_id: '',
+      mata_pelajaran_id: '',
+      guru_id: '',
+      hari: 'Senin',
+      jam_mulai: '07:00:00',
+      jam_selesai: '08:30:00',
+      tahun_ajaran: '2025/2026',
+      ruangan: ''
+    })
+    setModalType('create')
+    setShowModal(true)
+  }
+
+  const openEditModal = (schedule: Schedule) => {
+    setSelectedSchedule(schedule)
+    setFormData({
+      kelas_id: schedule.kelas_id,
+      mata_pelajaran_id: schedule.mata_pelajaran_id,
+      guru_id: schedule.guru_id,
+      hari: schedule.hari,
+      jam_mulai: schedule.jam_mulai,
+      jam_selesai: schedule.jam_selesai,
+      tahun_ajaran: schedule.tahun_ajaran,
+      ruangan: schedule.ruangan
+    })
+    setModalType('edit')
+    setShowModal(true)
+  }
+
+  const openDeleteModal = (schedule: Schedule) => {
+    setSelectedSchedule(schedule)
+    setModalType('delete')
+    setShowModal(true)
+  }
+
+  const closeModal = () => {
+    setShowModal(false)
+    setSelectedSchedule(null)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (modalType === 'create') {
+      createSchedule()
+    } else if (modalType === 'edit' && selectedSchedule) {
+      updateSchedule(selectedSchedule.id)
+    } else if (modalType === 'delete' && selectedSchedule) {
+      deleteSchedule(selectedSchedule.id)
+    }
+  }
+
+  React.useEffect(() => {
+    fetchSchedules()
+    fetchSubjects()
+    fetchTeachers()
+    fetchClasses()
+  }, [])
+
+  const filteredSchedules = schedules.filter(schedule => {
+    const matchSearch = 
+      schedule.nama_mapel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      schedule.nama_guru.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      schedule.ruangan.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchHari = filterHari ? schedule.hari === filterHari : true
+    
+    return matchSearch && matchHari
+  })
+
+  // Group schedules by day
+  const groupedSchedules = hariOptions.reduce((acc, hari) => {
+    acc[hari] = filteredSchedules.filter(s => s.hari === hari).sort((a, b) => a.jam_mulai.localeCompare(b.jam_mulai))
+    return acc
+  }, {} as Record<string, Schedule[]>)
+
+  const getHariColor = (hari: string) => {
+    switch (hari) {
+      case 'Senin': return '#3b82f6'
+      case 'Selasa': return '#10b981'
+      case 'Rabu': return '#f59e0b'
+      case 'Kamis': return '#8b5cf6'
+      case 'Jumat': return '#ec4899'
+      case 'Sabtu': return '#6366f1'
+      default: return '#6b7280'
+    }
+  }
+
+  const getClassName = (kelasId: number) => {
+    const kelas = classes.find(c => c.id === kelasId)
+    return kelas ? kelas.nama_kelas : `Kelas ${kelasId}`
+  }
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{
+        background: COLORS.white,
+        borderRadius: '16px',
+        padding: '24px',
+        marginBottom: '24px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(0, 0, 0, 0.05)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#1e293b',
+              margin: '0 0 8px 0',
+              textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            }}>
+              Manajemen Jadwal Pelajaran
+            </h2>
+            <p style={{
+              fontSize: '16px',
+              color: '#475569',
+              margin: 0,
+              fontWeight: '500'
+            }}>
+              Kelola jadwal pelajaran sekolah
+            </p>
+          </div>
+          
+          <button
+            onClick={openCreateModal}
+            style={{
+              background: `linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.accent} 100%)`,
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '14px 24px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.3s',
+              boxShadow: '0 4px 12px rgba(15, 76, 92, 0.3)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(15, 76, 92, 0.4)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 76, 92, 0.3)'
+            }}
+          >
+            <Plus size={16} />
+            Tambah Jadwal
+          </button>
+        </div>
+      </div>
+
+      {/* Search and Filter */}
+      <div style={{
+        background: COLORS.white,
+        borderRadius: '12px',
+        padding: '16px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+      }}>
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: '250px' }}>
+            <Search 
+              size={20} 
+              color="#6b7280" 
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)'
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Cari jadwal berdasarkan mapel, guru, atau ruangan..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 12px 12px 44px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '14px',
+                outline: 'none'
+              }}
+            />
+          </div>
+          
+          <select
+            value={filterHari}
+            onChange={(e) => setFilterHari(e.target.value)}
+            style={{
+              padding: '12px 16px',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none',
+              background: 'white',
+              minWidth: '150px'
+            }}
+          >
+            <option value="">Semua Hari</option>
+            {hariOptions.map(hari => (
+              <option key={hari} value={hari}>{hari}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Schedules Display */}
+      <div style={{
+        background: COLORS.white,
+        borderRadius: '12px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        overflow: 'hidden'
+      }}>
+        {loading ? (
+          <div style={{
+            padding: '60px',
+            textAlign: 'center',
+            color: '#6b7280'
+          }}>
+            Memuat data...
+          </div>
+        ) : filteredSchedules.length === 0 ? (
+          <div style={{
+            padding: '60px',
+            textAlign: 'center',
+            color: '#6b7280'
+          }}>
+            Tidak ada jadwal ditemukan
+          </div>
+        ) : (
+          <div style={{ padding: '20px' }}>
+            {hariOptions.map(hari => {
+              const daySchedules = groupedSchedules[hari] || []
+              if (filterHari && filterHari !== hari) return null
+              if (daySchedules.length === 0 && !filterHari) return null
+              
+              return (
+                <div key={hari} style={{ marginBottom: '24px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: getHariColor(hari)
+                    }} />
+                    <h3 style={{
+                      fontSize: '18px',
+                      fontWeight: '600',
+                      color: '#1f2937',
+                      margin: 0
+                    }}>
+                      {hari}
+                    </h3>
+                    <span style={{
+                      fontSize: '12px',
+                      color: '#6b7280',
+                      background: '#f3f4f6',
+                      padding: '4px 8px',
+                      borderRadius: '4px'
+                    }}>
+                      {daySchedules.length} jadwal
+                    </span>
+                  </div>
+                  
+                  {daySchedules.length === 0 ? (
+                    <div style={{
+                      padding: '20px',
+                      textAlign: 'center',
+                      color: '#9ca3af',
+                      background: '#f9fafb',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}>
+                      Tidak ada jadwal untuk hari ini
+                    </div>
+                  ) : (
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                      gap: '12px'
+                    }}>
+                      {daySchedules.map(schedule => (
+                        <div
+                          key={schedule.id}
+                          style={{
+                            background: '#f8fafc',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '10px',
+                            padding: '16px',
+                            borderLeft: `4px solid ${getHariColor(hari)}`,
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+                            e.currentTarget.style.transform = 'translateY(-2px)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.boxShadow = 'none'
+                            e.currentTarget.style.transform = 'translateY(0)'
+                          }}
+                        >
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            marginBottom: '12px'
+                          }}>
+                            <div>
+                              <h4 style={{
+                                fontSize: '16px',
+                                fontWeight: '600',
+                                color: '#1f2937',
+                                margin: '0 0 4px 0'
+                              }}>
+                                {schedule.nama_mapel}
+                              </h4>
+                              <p style={{
+                                fontSize: '13px',
+                                color: '#6b7280',
+                                margin: 0
+                              }}>
+                                {schedule.nama_guru}
+                              </p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              <button
+                                onClick={() => openEditModal(schedule)}
+                                style={{
+                                  background: 'white',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  padding: '4px 6px',
+                                  color: '#374151',
+                                  display: 'flex',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                <Edit size={12} />
+                              </button>
+                              <button
+                                onClick={() => openDeleteModal(schedule)}
+                                style={{
+                                  background: '#fef2f2',
+                                  border: '1px solid #fecaca',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  padding: '4px 6px',
+                                  color: '#dc2626',
+                                  display: 'flex',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: '8px',
+                            fontSize: '13px'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569' }}>
+                              <Clock size={14} />
+                              {schedule.jam_mulai.slice(0, 5)} - {schedule.jam_selesai.slice(0, 5)}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569' }}>
+                              <School size={14} />
+                              {getClassName(schedule.kelas_id)}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569' }}>
+                              <FileText size={14} />
+                              {schedule.ruangan}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569' }}>
+                              <Calendar size={14} />
+                              {schedule.tahun_ajaran}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              width: '100%',
+              maxWidth: modalType === 'delete' ? '500px' : '650px',
+              margin: '20px',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+          >
+            {modalType === 'delete' ? (
+              <div>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 16px 0'
+                }}>
+                  Hapus Jadwal Pelajaran
+                </h3>
+                
+                <p style={{
+                  fontSize: '14px',
+                  color: '#6b7280',
+                  margin: '0 0 24px 0',
+                  lineHeight: '1.5'
+                }}>
+                  Apakah Anda yakin ingin menghapus jadwal <strong>{selectedSchedule?.nama_mapel}</strong> pada hari <strong>{selectedSchedule?.hari}</strong> ({selectedSchedule?.jam_mulai} - {selectedSchedule?.jam_selesai})? 
+                  Tindakan ini tidak dapat dibatalkan.
+                </p>
+                
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end'
+                }}>
+                  <button
+                    onClick={closeModal}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    style={{
+                      padding: '8px 16px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.error,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menghapus...' : 'Hapus'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <h3 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  margin: '0 0 20px 0'
+                }}>
+                  {modalType === 'create' ? 'Tambah Jadwal Pelajaran' : 'Edit Jadwal Pelajaran'}
+                </h3>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Kelas *
+                    </label>
+                    <select
+                      required
+                      value={formData.kelas_id}
+                      onChange={(e) => setFormData({...formData, kelas_id: parseInt(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      <option value="">Pilih Kelas</option>
+                      {classes.map(cls => (
+                        <option key={cls.id} value={cls.id}>
+                          {cls.nama_kelas} - {cls.jenjang}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Mata Pelajaran *
+                    </label>
+                    <select
+                      required
+                      value={formData.mata_pelajaran_id}
+                      onChange={(e) => setFormData({...formData, mata_pelajaran_id: parseInt(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      <option value="">Pilih Mata Pelajaran</option>
+                      {subjects.map(subject => (
+                        <option key={subject.id} value={subject.id}>
+                          {subject.nama_mapel} ({subject.kode_mapel})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Guru *
+                    </label>
+                    <select
+                      required
+                      value={formData.guru_id}
+                      onChange={(e) => setFormData({...formData, guru_id: parseInt(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      <option value="">Pilih Guru</option>
+                      {teachers.map(teacher => (
+                        <option key={teacher.guru_id} value={teacher.guru_id}>
+                          {teacher.nama_lengkap}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Hari *
+                    </label>
+                    <select
+                      required
+                      value={formData.hari}
+                      onChange={(e) => setFormData({...formData, hari: e.target.value as any})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none',
+                        background: 'white'
+                      }}
+                    >
+                      {hariOptions.map(hari => (
+                        <option key={hari} value={hari}>{hari}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Jam Mulai *
+                    </label>
+                    <input
+                      type="time"
+                      required
+                      value={formData.jam_mulai.slice(0, 5)}
+                      onChange={(e) => setFormData({...formData, jam_mulai: e.target.value + ':00'})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Jam Selesai *
+                    </label>
+                    <input
+                      type="time"
+                      required
+                      value={formData.jam_selesai.slice(0, 5)}
+                      onChange={(e) => setFormData({...formData, jam_selesai: e.target.value + ':00'})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Ruangan *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.ruangan}
+                      onChange={(e) => setFormData({...formData, ruangan: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                      placeholder="Contoh: Ruang 1, Lab Komputer"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '6px'
+                    }}>
+                      Tahun Ajaran *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.tahun_ajaran}
+                      onChange={(e) => setFormData({...formData, tahun_ajaran: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        outline: 'none'
+                      }}
+                      placeholder="Contoh: 2025/2026"
+                    />
+                  </div>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'flex-end',
+                  marginTop: '24px'
+                }}>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    style={{
+                      padding: '10px 20px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      background: COLORS.primary,
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {loading ? 'Menyimpan...' : modalType === 'create' ? 'Tambah' : 'Simpan'}
+                  </button>
+                </div>
+              </form>
+            )}
           </motion.div>
         </div>
       )}
