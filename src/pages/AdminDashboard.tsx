@@ -2814,7 +2814,7 @@ const ParentManagement: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await apiCall('/api/users/list?limit=1000')
+      const response = await apiCall('/api/admin/user/list?limit=1000')
       if (response.success && response.data) {
         // Filter only users that could be parents
         const parentUsers = response.data.filter((user: User) => 
@@ -3977,7 +3977,7 @@ const TeacherManagement: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await apiCall('/api/users/list?limit=1000')
+      const response = await apiCall('/api/admin/user/list?limit=1000')
       if (response.success && response.data) {
         // Filter only users that could be teachers
         const teacherUsers = response.data.filter((user: User) => 
@@ -5440,7 +5440,7 @@ const StudentManagement: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await apiCall('/api/users/list?limit=1000')
+      const response = await apiCall('/api/admin/user/list?limit=1000')
       if (response.success && response.data) {
         // Filter only users that could be students (not admin/guru)
         const studentUsers = response.data.filter((user: User) => 
